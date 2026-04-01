@@ -1,0 +1,67 @@
+mod commands;
+mod database;
+mod models;
+mod scanner;
+
+use std::sync::Arc;
+use tauri::Manager;
+use commands::AppState;
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
+        .setup(|app| {
+            // Get app data directory for database and thumbnails
+            let app_data_dir = app.path()
+                .app_data_dir()
+                .expect("Failed to get app data directory");
+            
+            let thumbnails_dir = app_data_dir.join("thumbnails");
+            std::fs::create_dir_all(&thumbnails_dir).expect("Failed to create thumbnails directory");
+
+            let db = database::Database::new(app_data_dir)
+                .expect("Failed to initialize database");
+
+            app.manage(AppState {
+                db: Arc::new(db),
+                thumbnails_dir: thumbnails_dir.to_string_lossy().to_string(),
+                playback_sessions: Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
+            });
+
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            // Library
+            commands::add_library,
+            commands::get_libraries,
+            commands::remove_library,
+            // Videos
+            commands::get_all_videos,
+            commands::get_videos_by_library,
+            commands::set_video_watched,
+            commands::set_video_progress,
+            commands::set_video_favorite,
+            commands::delete_video_file,
+            commands::get_library_stats,
+            // Scanning
+            commands::scan_library,
+            commands::scan_all_libraries,
+            // Thumbnails
+            commands::generate_thumbnails,
+            commands::extract_video_metadata,
+            commands::get_thumbnail_base64,
+            // Playback
+            commands::open_in_player,
+            // Collections
+            commands::create_collection,
+            commands::get_collections,
+            commands::delete_collection,
+            commands::add_video_to_collection,
+            commands::remove_video_from_collection,
+            commands::get_collection_videos,
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
