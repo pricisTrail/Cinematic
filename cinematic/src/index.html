@@ -195,6 +195,14 @@
                         <div class="shelf-scroll" id="shelf-continue-items"></div>
                     </section>
 
+                    <!-- Collections -->
+                    <section class="content-shelf" id="shelf-collections" style="display:none">
+                        <div class="shelf-header">
+                            <h2 class="shelf-title">Collections</h2>
+                        </div>
+                        <div class="shelf-scroll shelf-scroll-collections" id="shelf-collection-items"></div>
+                    </section>
+
                     <!-- Recently Added -->
                     <section class="content-shelf" id="shelf-recent">
                         <div class="shelf-header">
@@ -378,6 +386,42 @@
                         <span>Create</span>
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Add To Collection Dialog -->
+        <div class="dialog-overlay" id="dialog-collection-picker" style="display: none;">
+            <div class="dialog-backdrop" id="dialog-collection-picker-backdrop"></div>
+            <div class="dialog-box dialog-box-wide">
+                <button class="modal-close dialog-close" id="collection-picker-close" aria-label="Close add to collection dialog">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+                <h3>Add To Collection</h3>
+                <p class="dialog-text" id="collection-picker-video-title"></p>
+                <div class="collection-picker-create">
+                    <input type="text" class="dialog-input" id="collection-picker-name" placeholder="Create a new collection" />
+                    <button class="btn-primary" id="collection-picker-create-btn">
+                        <span>Create</span>
+                    </button>
+                </div>
+                <div class="collection-picker-list" id="collection-picker-list"></div>
+            </div>
+        </div>
+
+        <!-- Collection Thumbnail Dialog -->
+        <div class="dialog-overlay" id="dialog-collection-thumbnail" style="display: none;">
+            <div class="dialog-backdrop" id="dialog-collection-thumbnail-backdrop"></div>
+            <div class="dialog-box dialog-box-wide">
+                <button class="modal-close dialog-close" id="collection-thumbnail-close" aria-label="Close collection thumbnail dialog">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+                <h3>Collection Thumbnail</h3>
+                <p class="dialog-text" id="collection-thumbnail-title"></p>
+                <div class="dialog-actions dialog-actions-start" id="collection-thumbnail-actions">
+                    <button class="btn-primary" id="collection-thumbnail-upload">Upload Image</button>
+                    <button class="btn-secondary" id="collection-thumbnail-clear">Remove Thumbnail</button>
+                </div>
+                <div class="collection-thumbnail-grid" id="collection-thumbnail-grid"></div>
             </div>
         </div>
     </div>

@@ -40,8 +40,12 @@ let searchQuery = '';
 let sortMode = 'date-desc';
 let isListView = false;
 let thumbnailCache = {};
+let collectionCoverCache = {};
 let syncVideosPromise = null;
 let activeVideoMenuId = null;
+let collectionPickerVideo = null;
+let collectionThumbnailTarget = null;
+let featuredVideoId = null;
 
 // ─── Initialize ───
 document.addEventListener('DOMContentLoaded', async () => {
@@ -64,6 +68,7 @@ async function loadData() {
         updateStats();
         // Start loading thumbnails in background
         loadThumbnailsBatch();
+        loadCollectionCoversBatch();
         // Extract metadata for videos without it
         extractMetadataBatch();
     } catch (e) {
@@ -84,6 +89,25 @@ async function loadThumbnailsBatch() {
                 // Thumbnail not available, skip
             }
         }
+    }
+}
+
+async function loadCollectionCoversBatch() {
+    let loadedAny = false;
+    for (const collection of collections) {
+        if (collection.cover_image_path && !collectionCoverCache[collection.id]) {
+            try {
+                const base64 = await invoke('get_image_base64', { imagePath: collection.cover_image_path });
+                collectionCoverCache[collection.id] = base64;
+                loadedAny = true;
+            } catch (e) {
+                // Cover image not available, skip
+            }
+        }
+    }
+
+    if (loadedAny && currentView === 'home') {
+        renderHome();
     }
 }
 
@@ -120,6 +144,16 @@ async function syncVideoState() {
     syncVideosPromise = (async () => {
         try {
             allVideos = await invoke('get_all_videos');
+            collections = await invoke('get_collections');
+            renderCollectionNav();
+            const nextCoverCache = {};
+            collections.forEach(collection => {
+                if (collection.cover_image_path && collectionCoverCache[collection.id]) {
+                    nextCoverCache[collection.id] = collectionCoverCache[collection.id];
+                }
+            });
+            collectionCoverCache = nextCoverCache;
+            loadCollectionCoversBatch();
             updateStats();
 
             if (selectedVideo) {
@@ -160,24 +194,26 @@ function updateCardThumbnail(videoId, base64) {
 
 function closeVideoMenus() {
     document.querySelectorAll('.video-card.menu-open').forEach(card => card.classList.remove('menu-open'));
+    document.querySelectorAll('.collection-home-card.menu-open').forEach(card => card.classList.remove('menu-open'));
     document.querySelectorAll('.card-menu-trigger.active').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.card-overflow-menu.open').forEach(menu => menu.classList.remove('open'));
     activeVideoMenuId = null;
 }
 
-function toggleVideoMenu(videoId, trigger) {
-    const card = trigger.closest('.video-card');
+function toggleOverflowMenu(trigger) {
+    const card = trigger.closest('.video-card, .collection-home-card');
     const menu = card ? card.querySelector('.card-overflow-menu') : null;
     if (!menu) return;
 
-    const isOpen = activeVideoMenuId === videoId && menu.classList.contains('open');
+    const menuId = trigger.dataset.videoMenuTrigger || trigger.dataset.collectionMenuTrigger;
+    const isOpen = activeVideoMenuId === menuId && menu.classList.contains('open');
     closeVideoMenus();
 
     if (!isOpen) {
         if (card) card.classList.add('menu-open');
         trigger.classList.add('active');
         menu.classList.add('open');
-        activeVideoMenuId = videoId;
+        activeVideoMenuId = menuId;
     }
 }
 
@@ -207,14 +243,28 @@ async function deleteVideoPermanently(video) {
 
 function handleVideoMenuAction(action, video) {
     switch (action) {
-        case 'play':
-            playVideo(video);
+        case 'collections':
+            openCollectionPickerDialog(video);
             break;
         case 'details':
             openModal(video);
             break;
         case 'delete':
             deleteVideoPermanently(video);
+            break;
+    }
+}
+
+async function handleCollectionMenuAction(action, collectionId) {
+    const collection = collections.find(c => c.id === collectionId);
+    if (!collection) return;
+
+    switch (action) {
+        case 'open':
+            switchView('collection', { collectionId });
+            break;
+        case 'thumbnail':
+            await openCollectionThumbnailDialog(collection);
             break;
     }
 }
@@ -352,6 +402,19 @@ function setupEventListeners() {
         document.getElementById('dialog-new-collection').style.display = 'none';
     });
     document.getElementById('dialog-create-collection').addEventListener('click', createCollection);
+    document.getElementById('collection-picker-close').addEventListener('click', closeCollectionPickerDialog);
+    document.getElementById('dialog-collection-picker-backdrop').addEventListener('click', closeCollectionPickerDialog);
+    document.getElementById('collection-picker-create-btn').addEventListener('click', createCollectionFromPicker);
+    document.getElementById('collection-thumbnail-close').addEventListener('click', closeCollectionThumbnailDialog);
+    document.getElementById('dialog-collection-thumbnail-backdrop').addEventListener('click', closeCollectionThumbnailDialog);
+    document.getElementById('collection-thumbnail-clear').addEventListener('click', clearCollectionThumbnail);
+    document.getElementById('collection-thumbnail-upload').addEventListener('click', uploadCollectionThumbnailImage);
+    document.getElementById('collection-picker-name').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            createCollectionFromPicker();
+        }
+    });
 
     window.addEventListener('focus', () => {
         syncVideoState();
@@ -369,6 +432,8 @@ function setupEventListeners() {
             closeVideoMenus();
             closeModal();
             document.getElementById('dialog-new-collection').style.display = 'none';
+            closeCollectionPickerDialog();
+            closeCollectionThumbnailDialog();
         }
         // Ctrl+B to toggle sidebar
         if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
@@ -426,8 +491,6 @@ function renderCurrentView() {
 
 // ─── Render: Home ───
 function renderHome() {
-    const filtered = filterAndSort(allVideos);
-    
     // Update hero
     const heroSubtitle = document.getElementById('hero-subtitle');
     if (allVideos.length > 0) {
@@ -439,9 +502,8 @@ function renderHome() {
 
     // Featured card
     const heroVisual = document.getElementById('hero-visual');
-    const recent = [...allVideos].sort((a, b) => b.date_added.localeCompare(a.date_added));
-    if (recent.length > 0) {
-        const featured = recent[0];
+    const featured = getFeaturedVideo();
+    if (featured) {
         heroVisual.innerHTML = createFeaturedCard(featured);
     } else {
         heroVisual.innerHTML = '';
@@ -457,6 +519,15 @@ function renderHome() {
         shelfContinue.style.display = 'none';
     }
 
+    // Collections shelf
+    const shelfCollections = document.getElementById('shelf-collections');
+    if (collections.length > 0) {
+        shelfCollections.style.display = 'block';
+        document.getElementById('shelf-collection-items').innerHTML = collections.map(createCollectionCard).join('');
+    } else {
+        shelfCollections.style.display = 'none';
+    }
+
     // Recently Added shelf
     const recentItems = [...allVideos].sort((a, b) => b.date_added.localeCompare(a.date_added)).slice(0, 12);
     document.getElementById('shelf-recent-items').innerHTML = recentItems.map(createVideoCard).join('');
@@ -466,7 +537,26 @@ function renderHome() {
     document.getElementById('shelf-unwatched-items').innerHTML = unwatched.map(createVideoCard).join('');
 
     attachCardListeners();
+    attachCollectionCardListeners();
     applyScrollReveal();
+}
+
+function getFeaturedVideo() {
+    if (allVideos.length === 0) {
+        featuredVideoId = null;
+        return null;
+    }
+
+    if (featuredVideoId) {
+        const existingFeatured = allVideos.find(video => video.id === featuredVideoId);
+        if (existingFeatured) {
+            return existingFeatured;
+        }
+    }
+
+    const randomVideo = allVideos[Math.floor(Math.random() * allVideos.length)];
+    featuredVideoId = randomVideo.id;
+    return randomVideo;
 }
 
 function renderAllVideos() {
@@ -505,6 +595,7 @@ function renderFavorites() {
     grid.innerHTML = favorites.length > 0 ? favorites.map(createVideoCard).join('') :
         '<div class="empty-state"><div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.75" opacity="0.3"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div><h2 class="empty-title">No Favorites Yet</h2><p class="empty-text">Mark videos as favorites to see them here</p></div>';
     attachCardListeners();
+    applyScrollReveal();
 }
 
 async function renderLibraryView() {
@@ -537,6 +628,7 @@ async function renderCollectionView() {
         grid.innerHTML = filtered.length > 0 ? filtered.map(createVideoCard).join('') :
             '<div class="empty-state"><h2 class="empty-title">Empty Collection</h2><p class="empty-text">Add videos to this collection from the video detail view</p></div>';
         attachCardListeners();
+        applyScrollReveal();
     } catch (e) {
         console.error(e);
     }
@@ -588,7 +680,7 @@ function createVideoCard(video) {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
             </button>
             <div class="card-overflow-menu" data-video-menu="${video.id}">
-                <button type="button" data-video-action="play">Play in VLC</button>
+                <button type="button" data-video-action="collections">Add To Collection</button>
                 <button type="button" data-video-action="details">Details</button>
                 <button type="button" class="danger" data-video-action="delete">Delete Permanently</button>
             </div>
@@ -639,11 +731,75 @@ function createFeaturedCard(video) {
     `;
 }
 
+function createCollectionCard(collection) {
+    const description = collection.description?.trim() || '';
+    const coverThumbnail = collection.cover_image_path
+        ? collectionCoverCache[collection.id]
+        : (collection.cover_video_id ? thumbnailCache[collection.cover_video_id] : null);
+    return `
+        <div class="collection-home-card reveal-item" data-collection-id="${collection.id}" title="${escapeHtml(collection.name)}">
+            ${coverThumbnail ? `
+                <div class="collection-home-cover">
+                    <img src="${coverThumbnail}" alt="${escapeHtml(collection.name)}" />
+                </div>
+                <div class="collection-home-cover-overlay"></div>
+            ` : ''}
+            <button class="card-menu-trigger collection-card-menu-trigger" data-collection-menu-trigger="${collection.id}" aria-label="Collection actions">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+            </button>
+            <div class="card-overflow-menu" data-collection-menu="${collection.id}">
+                <button type="button" data-collection-action="open">Open Collection</button>
+                <button type="button" data-collection-action="thumbnail">Set Thumbnail</button>
+            </div>
+            ${coverThumbnail ? `
+                <div class="collection-home-icon-spacer" aria-hidden="true"></div>
+            ` : `
+                <div class="collection-home-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3h-8l-2 4h12l-2-4z"/></svg>
+                </div>
+            `}
+            <div class="collection-home-info">
+                <div class="collection-home-title">${escapeHtml(collection.name)}</div>
+                <div class="collection-home-meta">${collection.video_count} ${collection.video_count === 1 ? 'video' : 'videos'}</div>
+                ${description ? `<div class="collection-home-desc">${escapeHtml(description)}</div>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function attachCollectionCardListeners() {
+    document.querySelectorAll('[data-collection-menu-trigger]').forEach(trigger => {
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleOverflowMenu(trigger);
+        });
+    });
+
+    document.querySelectorAll('[data-collection-menu]').forEach(menu => {
+        menu.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const actionButton = e.target.closest('[data-collection-action]');
+            if (!actionButton) return;
+            closeVideoMenus();
+            await handleCollectionMenuAction(actionButton.dataset.collectionAction, menu.dataset.collectionMenu);
+        });
+    });
+
+    document.querySelectorAll('.collection-home-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.card-menu-trigger') || e.target.closest('.card-overflow-menu')) {
+                return;
+            }
+            switchView('collection', { collectionId: card.dataset.collectionId });
+        });
+    });
+}
+
 function attachCardListeners() {
     document.querySelectorAll('[data-video-menu-trigger]').forEach(trigger => {
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
-            toggleVideoMenu(trigger.dataset.videoMenuTrigger, trigger);
+            toggleOverflowMenu(trigger);
         });
     });
 
@@ -771,6 +927,242 @@ function closeModal() {
 function updateWatchedButton(video) {
     const btn = document.getElementById('modal-watched');
     btn.innerHTML = `<span>${video.watched ? 'Mark Unwatched' : 'Mark Watched'}</span>`;
+}
+
+async function refreshCollectionsState() {
+    collections = await invoke('get_collections');
+    renderCollectionNav();
+    if (currentView === 'collection') {
+        await renderCollectionView();
+    } else if (currentView === 'home') {
+        renderHome();
+    }
+}
+
+function closeCollectionPickerDialog() {
+    document.getElementById('dialog-collection-picker').style.display = 'none';
+    document.getElementById('collection-picker-name').value = '';
+    collectionPickerVideo = null;
+}
+
+function closeCollectionThumbnailDialog() {
+    document.getElementById('dialog-collection-thumbnail').style.display = 'none';
+    document.getElementById('collection-thumbnail-grid').innerHTML = '';
+    collectionThumbnailTarget = null;
+}
+
+async function openCollectionThumbnailDialog(collection) {
+    const collectionVideos = await invoke('get_collection_videos', { collectionId: collection.id });
+    closeVideoMenus();
+    collectionThumbnailTarget = collection;
+    document.getElementById('collection-thumbnail-title').textContent = `Choose a cover image for "${collection.name}"`;
+    document.getElementById('dialog-collection-thumbnail').style.display = 'flex';
+    document.getElementById('collection-thumbnail-clear').style.display = (collection.cover_video_id || collection.cover_image_path) ? 'inline-flex' : 'none';
+    renderCollectionThumbnailGrid(collectionVideos, collection.cover_video_id);
+}
+
+async function uploadCollectionThumbnailImage() {
+    if (!collectionThumbnailTarget) return;
+
+    try {
+        const { open } = window.__TAURI__.dialog ||
+            await import('@tauri-apps/plugin-dialog');
+
+        const selected = await open({
+            multiple: false,
+            directory: false,
+            title: 'Choose Collection Cover Image',
+            filters: [{
+                name: 'Images',
+                extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg'],
+            }],
+        });
+
+        if (!selected) return;
+
+        const sourceImagePath = typeof selected === 'string' ? selected : selected.path;
+        await invoke('set_collection_cover_image', {
+            collectionId: collectionThumbnailTarget.id,
+            sourceImagePath,
+        });
+
+        delete collectionCoverCache[collectionThumbnailTarget.id];
+        await refreshCollectionsState();
+        const updated = collections.find(c => c.id === collectionThumbnailTarget.id);
+        collectionThumbnailTarget = updated || collectionThumbnailTarget;
+        await loadCollectionCoversBatch();
+        const refreshedVideos = await invoke('get_collection_videos', { collectionId: collectionThumbnailTarget.id });
+        renderCollectionThumbnailGrid(refreshedVideos, null);
+        document.getElementById('collection-thumbnail-clear').style.display = 'inline-flex';
+        showToast('Collection cover image uploaded', 'success');
+    } catch (e) {
+        if (!String(e).includes('cancelled') && !String(e).includes('user')) {
+            showToast('Failed to upload collection cover', 'error');
+        }
+    }
+}
+
+function renderCollectionThumbnailGrid(videos, activeCoverId) {
+    const grid = document.getElementById('collection-thumbnail-grid');
+    if (videos.length === 0) {
+        grid.innerHTML = '<p class="collection-picker-empty">No videos in this collection yet. You can still upload any image as the cover.</p>';
+        return;
+    }
+
+    grid.innerHTML = videos.map(video => {
+        const thumbnail = thumbnailCache[video.id];
+        return `
+            <button type="button" class="collection-thumbnail-option ${video.id === activeCoverId ? 'active' : ''}" data-thumbnail-video-id="${video.id}">
+                <div class="collection-thumbnail-media">
+                    ${thumbnail
+                        ? `<img src="${thumbnail}" alt="${escapeHtml(video.title)}" />`
+                        : `<div class="collection-thumbnail-placeholder"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.75"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10,8 16,12 10,16"/></svg></div>`
+                    }
+                </div>
+                <div class="collection-thumbnail-label">${escapeHtml(video.title)}</div>
+            </button>
+        `;
+    }).join('');
+
+    grid.querySelectorAll('[data-thumbnail-video-id]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!collectionThumbnailTarget) return;
+
+            try {
+                await invoke('set_collection_cover', {
+                    collectionId: collectionThumbnailTarget.id,
+                    coverVideoId: btn.dataset.thumbnailVideoId,
+                });
+                await refreshCollectionsState();
+                const updated = collections.find(c => c.id === collectionThumbnailTarget.id);
+                collectionThumbnailTarget = updated || collectionThumbnailTarget;
+                const refreshedVideos = await invoke('get_collection_videos', { collectionId: collectionThumbnailTarget.id });
+                renderCollectionThumbnailGrid(refreshedVideos, btn.dataset.thumbnailVideoId);
+                document.getElementById('collection-thumbnail-clear').style.display = 'inline-flex';
+                showToast('Collection thumbnail updated', 'success');
+            } catch (e) {
+                showToast('Failed to update collection thumbnail', 'error');
+            }
+        });
+    });
+}
+
+async function clearCollectionThumbnail() {
+    if (!collectionThumbnailTarget) return;
+
+    try {
+        await invoke('set_collection_cover', {
+            collectionId: collectionThumbnailTarget.id,
+            coverVideoId: null,
+        });
+        delete collectionCoverCache[collectionThumbnailTarget.id];
+        await refreshCollectionsState();
+        const updated = collections.find(c => c.id === collectionThumbnailTarget.id);
+        collectionThumbnailTarget = updated || collectionThumbnailTarget;
+        const refreshedVideos = await invoke('get_collection_videos', { collectionId: collectionThumbnailTarget.id });
+        renderCollectionThumbnailGrid(refreshedVideos, null);
+        document.getElementById('collection-thumbnail-clear').style.display = 'none';
+        showToast('Collection thumbnail removed', 'success');
+    } catch (e) {
+        showToast('Failed to remove collection thumbnail', 'error');
+    }
+}
+
+async function openCollectionPickerDialog(video) {
+    closeVideoMenus();
+    collectionPickerVideo = video;
+    document.getElementById('collection-picker-video-title').textContent = video.title;
+    document.getElementById('dialog-collection-picker').style.display = 'flex';
+    document.getElementById('collection-picker-name').value = '';
+    await renderCollectionPickerDialog(video);
+    document.getElementById('collection-picker-name').focus();
+}
+
+async function renderCollectionPickerDialog(video) {
+    const container = document.getElementById('collection-picker-list');
+
+    if (collections.length === 0) {
+        container.innerHTML = '<p class="collection-picker-empty">No collections yet. Create one below and this video will be added immediately.</p>';
+        return;
+    }
+
+    const collectionStates = await Promise.all(collections.map(async (col) => {
+        try {
+            const colVideos = await invoke('get_collection_videos', { collectionId: col.id });
+            return {
+                collection: col,
+                isInCollection: colVideos.some(v => v.id === video.id),
+            };
+        } catch (e) {
+            return {
+                collection: col,
+                isInCollection: false,
+            };
+        }
+    }));
+
+    container.innerHTML = collectionStates.map(({ collection, isInCollection }) => `
+        <div class="collection-picker-item">
+            <div class="collection-picker-body">
+                <div class="collection-picker-name">${escapeHtml(collection.name)}</div>
+                <div class="collection-picker-meta">${collection.video_count} videos</div>
+            </div>
+            <button class="collection-picker-button ${isInCollection ? 'added' : ''}" data-picker-collection-id="${collection.id}" data-picker-action="${isInCollection ? 'remove' : 'add'}">
+                ${isInCollection ? 'Added' : 'Add'}
+            </button>
+        </div>
+    `).join('');
+
+    container.querySelectorAll('[data-picker-collection-id]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!collectionPickerVideo) return;
+
+            const collectionId = btn.dataset.pickerCollectionId;
+            const action = btn.dataset.pickerAction;
+
+            try {
+                if (action === 'add') {
+                    await invoke('add_video_to_collection', { collectionId, videoId: collectionPickerVideo.id });
+                    showToast('Added to collection', 'success');
+                } else {
+                    await invoke('remove_video_from_collection', { collectionId, videoId: collectionPickerVideo.id });
+                    showToast('Removed from collection', 'success');
+                }
+
+                await refreshCollectionsState();
+                await renderCollectionPickerDialog(collectionPickerVideo);
+                if (selectedVideo && selectedVideo.id === collectionPickerVideo.id) {
+                    renderModalCollections(selectedVideo);
+                }
+            } catch (e) {
+                showToast('Failed to update collection', 'error');
+            }
+        });
+    });
+}
+
+async function createCollectionFromPicker() {
+    if (!collectionPickerVideo) return;
+
+    const name = document.getElementById('collection-picker-name').value.trim();
+    if (!name) {
+        showToast('Please enter a collection name', 'error');
+        return;
+    }
+
+    try {
+        const col = await invoke('create_collection', { name, description: '' });
+        await invoke('add_video_to_collection', { collectionId: col.id, videoId: collectionPickerVideo.id });
+        document.getElementById('collection-picker-name').value = '';
+        showToast(`Created "${name}" and added the video`, 'success');
+        await refreshCollectionsState();
+        await renderCollectionPickerDialog(collectionPickerVideo);
+        if (selectedVideo && selectedVideo.id === collectionPickerVideo.id) {
+            renderModalCollections(selectedVideo);
+        }
+    } catch (e) {
+        showToast('Failed to create collection', 'error');
+    }
 }
 
 async function toggleWatchedModal() {
@@ -1035,18 +1427,24 @@ async function createCollection() {
 function renderLibraryNav() {
     const container = document.getElementById('library-nav-list');
     container.innerHTML = libraries.map(lib => `
-        <button class="nav-item nav-item-library" data-library-id="${lib.id}" data-view="library" title="${escapeHtml(lib.name)}">
+        <div class="nav-item nav-item-library" data-library-id="${lib.id}" data-view="library" title="${escapeHtml(lib.name)}" role="button" tabindex="0">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
             <span>${escapeHtml(lib.name)}</span>
-            <button class="nav-delete" title="Remove" data-library-id="${lib.id}" onclick="event.stopPropagation()">
+            <button type="button" class="nav-delete" title="Remove" data-library-id="${lib.id}">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
-        </button>
+        </div>
     `).join('');
 
     container.querySelectorAll('.nav-item-library').forEach(btn => {
         btn.addEventListener('click', () => {
             switchView('library', { libraryId: btn.dataset.libraryId });
+        });
+        btn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                switchView('library', { libraryId: btn.dataset.libraryId });
+            }
         });
     });
 
@@ -1061,18 +1459,24 @@ function renderLibraryNav() {
 function renderCollectionNav() {
     const container = document.getElementById('collection-nav-list');
     container.innerHTML = collections.map(col => `
-        <button class="nav-item nav-item-collection" data-collection-id="${col.id}" data-view="collection" title="${escapeHtml(col.name)}">
+        <div class="nav-item nav-item-collection" data-collection-id="${col.id}" data-view="collection" title="${escapeHtml(col.name)}" role="button" tabindex="0">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3h-8l-2 4h12l-2-4z"/></svg>
             <span>${escapeHtml(col.name)}</span>
-            <button class="nav-delete" title="Delete" data-collection-id="${col.id}" onclick="event.stopPropagation()">
+            <button type="button" class="nav-delete" title="Delete" data-collection-id="${col.id}">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
-        </button>
+        </div>
     `).join('');
 
     container.querySelectorAll('.nav-item-collection').forEach(btn => {
         btn.addEventListener('click', () => {
             switchView('collection', { collectionId: btn.dataset.collectionId });
+        });
+        btn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                switchView('collection', { collectionId: btn.dataset.collectionId });
+            }
         });
     });
 

@@ -20,6 +20,8 @@ pub fn run() {
             
             let thumbnails_dir = app_data_dir.join("thumbnails");
             std::fs::create_dir_all(&thumbnails_dir).expect("Failed to create thumbnails directory");
+            let collection_covers_dir = app_data_dir.join("collection_covers");
+            std::fs::create_dir_all(&collection_covers_dir).expect("Failed to create collection covers directory");
 
             let db = database::Database::new(app_data_dir)
                 .expect("Failed to initialize database");
@@ -27,6 +29,7 @@ pub fn run() {
             app.manage(AppState {
                 db: Arc::new(db),
                 thumbnails_dir: thumbnails_dir.to_string_lossy().to_string(),
+                collection_covers_dir: collection_covers_dir.to_string_lossy().to_string(),
                 playback_sessions: Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
             });
 
@@ -52,12 +55,15 @@ pub fn run() {
             commands::generate_thumbnails,
             commands::extract_video_metadata,
             commands::get_thumbnail_base64,
+            commands::get_image_base64,
             // Playback
             commands::open_in_player,
             // Collections
             commands::create_collection,
             commands::get_collections,
             commands::delete_collection,
+            commands::set_collection_cover,
+            commands::set_collection_cover_image,
             commands::add_video_to_collection,
             commands::remove_video_from_collection,
             commands::get_collection_videos,

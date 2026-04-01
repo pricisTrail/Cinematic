@@ -59,6 +59,7 @@ impl Database {
                 name TEXT NOT NULL,
                 description TEXT DEFAULT '',
                 cover_video_id TEXT,
+                cover_image_path TEXT,
                 created_at TEXT NOT NULL
             );
 
@@ -76,6 +77,15 @@ impl Database {
             CREATE INDEX IF NOT EXISTS idx_videos_date_added ON videos(date_added);
             CREATE INDEX IF NOT EXISTS idx_videos_title ON videos(title);
         ").map_err(|e| e.to_string())?;
+
+        if let Err(e) = conn.execute(
+            "ALTER TABLE collections ADD COLUMN cover_image_path TEXT",
+            [],
+        ) {
+            if !e.to_string().contains("duplicate column name") {
+                return Err(e.to_string());
+            }
+        }
         Ok(())
     }
 
@@ -382,13 +392,13 @@ impl Database {
             "INSERT INTO collections (id, name, description, created_at) VALUES (?1, ?2, ?3, ?4)",
             params![id, name, description, now],
         ).map_err(|e| e.to_string())?;
-        Ok(Collection { id, name: name.to_string(), description: description.to_string(), cover_video_id: None, created_at: now, video_count: 0 })
+        Ok(Collection { id, name: name.to_string(), description: description.to_string(), cover_video_id: None, cover_image_path: None, created_at: now, video_count: 0 })
     }
 
     pub fn get_collections(&self) -> Result<Vec<Collection>, String> {
         let conn = self.conn.lock().map_err(|e| e.to_string())?;
         let mut stmt = conn.prepare(
-            "SELECT c.id, c.name, c.description, c.cover_video_id, c.created_at, COUNT(cv.video_id) as video_count
+            "SELECT c.id, c.name, c.description, c.cover_video_id, c.cover_image_path, c.created_at, COUNT(cv.video_id) as video_count
              FROM collections c
              LEFT JOIN collection_videos cv ON c.id = cv.collection_id
              GROUP BY c.id
@@ -400,13 +410,42 @@ impl Database {
                 name: row.get(1)?,
                 description: row.get(2)?,
                 cover_video_id: row.get(3)?,
-                created_at: row.get(4)?,
-                video_count: row.get(5)?,
+                cover_image_path: row.get(4)?,
+                created_at: row.get(5)?,
+                video_count: row.get(6)?,
             })
         }).map_err(|e| e.to_string())?
         .filter_map(|r| r.ok())
         .collect();
         Ok(cols)
+    }
+
+    pub fn get_collection_by_id(&self, collection_id: &str) -> Result<Option<Collection>, String> {
+        let conn = self.conn.lock().map_err(|e| e.to_string())?;
+        let mut stmt = conn.prepare(
+            "SELECT c.id, c.name, c.description, c.cover_video_id, c.cover_image_path, c.created_at, COUNT(cv.video_id) as video_count
+             FROM collections c
+             LEFT JOIN collection_videos cv ON c.id = cv.collection_id
+             WHERE c.id = ?1
+             GROUP BY c.id
+             LIMIT 1"
+        ).map_err(|e| e.to_string())?;
+
+        match stmt.query_row(params![collection_id], |row| {
+            Ok(Collection {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                description: row.get(2)?,
+                cover_video_id: row.get(3)?,
+                cover_image_path: row.get(4)?,
+                created_at: row.get(5)?,
+                video_count: row.get(6)?,
+            })
+        }) {
+            Ok(collection) => Ok(Some(collection)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(e.to_string()),
+        }
     }
 
     pub fn delete_collection(&self, id: &str) -> Result<(), String> {
@@ -415,6 +454,24 @@ impl Database {
             .map_err(|e| e.to_string())?;
         conn.execute("DELETE FROM collections WHERE id = ?1", params![id])
             .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    pub fn set_collection_cover(&self, collection_id: &str, cover_video_id: Option<&str>) -> Result<(), String> {
+        let conn = self.conn.lock().map_err(|e| e.to_string())?;
+        conn.execute(
+            "UPDATE collections SET cover_video_id = ?1, cover_image_path = NULL WHERE id = ?2",
+            params![cover_video_id, collection_id],
+        ).map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    pub fn set_collection_cover_image(&self, collection_id: &str, cover_image_path: Option<&str>) -> Result<(), String> {
+        let conn = self.conn.lock().map_err(|e| e.to_string())?;
+        conn.execute(
+            "UPDATE collections SET cover_video_id = NULL, cover_image_path = ?1 WHERE id = ?2",
+            params![cover_image_path, collection_id],
+        ).map_err(|e| e.to_string())?;
         Ok(())
     }
 

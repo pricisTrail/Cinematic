@@ -32,6 +32,7 @@ struct VlcStatus {
 pub struct AppState {
     pub(crate) db: Arc<Database>,
     pub(crate) thumbnails_dir: String,
+    pub(crate) collection_covers_dir: String,
     pub(crate) playback_sessions: Arc<Mutex<HashMap<String, ManagedPlaybackSession>>>,
 }
 
@@ -233,6 +234,31 @@ fn extract_xml_tag(body: &str, tag: &str) -> Option<String> {
     let start = body.find(&open_tag)? + open_tag.len();
     let end = body[start..].find(&close_tag)? + start;
     Some(body[start..end].trim().to_string())
+}
+
+fn remove_file_if_exists(path: &str) {
+    match std::fs::remove_file(path) {
+        Ok(()) => {}
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
+        Err(_) => {}
+    }
+}
+
+fn image_mime_type_for(path: &str) -> &'static str {
+    match std::path::Path::new(path)
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| ext.to_ascii_lowercase())
+        .as_deref()
+    {
+        Some("png") => "image/png",
+        Some("webp") => "image/webp",
+        Some("gif") => "image/gif",
+        Some("bmp") => "image/bmp",
+        Some("svg") => "image/svg+xml",
+        Some("jpeg") | Some("jpg") => "image/jpeg",
+        _ => "application/octet-stream",
+    }
 }
 
 fn open_with_system_default(video_path: &str) -> Result<(), String> {
@@ -656,6 +682,14 @@ pub fn get_thumbnail_base64(thumbnail_path: String) -> Result<String, String> {
     Ok(format!("data:image/jpeg;base64,{}", encoded))
 }
 
+#[tauri::command]
+pub fn get_image_base64(image_path: String) -> Result<String, String> {
+    use base64::Engine;
+    let data = std::fs::read(&image_path).map_err(|e| e.to_string())?;
+    let encoded = base64::engine::general_purpose::STANDARD.encode(&data);
+    Ok(format!("data:{};base64,{}", image_mime_type_for(&image_path), encoded))
+}
+
 // ─── Collection Commands ───
 
 #[tauri::command]
@@ -670,7 +704,48 @@ pub fn get_collections(state: State<'_, AppState>) -> Result<Vec<Collection>, St
 
 #[tauri::command]
 pub fn delete_collection(state: State<'_, AppState>, collection_id: String) -> Result<(), String> {
+    if let Some(collection) = state.db.get_collection_by_id(&collection_id)? {
+        if let Some(cover_image_path) = collection.cover_image_path {
+            remove_file_if_exists(&cover_image_path);
+        }
+    }
     state.db.delete_collection(&collection_id)
+}
+
+#[tauri::command]
+pub fn set_collection_cover(state: State<'_, AppState>, collection_id: String, cover_video_id: Option<String>) -> Result<(), String> {
+    if let Some(collection) = state.db.get_collection_by_id(&collection_id)? {
+        if let Some(cover_image_path) = collection.cover_image_path {
+            remove_file_if_exists(&cover_image_path);
+        }
+    }
+    state.db.set_collection_cover(&collection_id, cover_video_id.as_deref())
+}
+
+#[tauri::command]
+pub fn set_collection_cover_image(state: State<'_, AppState>, collection_id: String, source_image_path: String) -> Result<(), String> {
+    let source_path = std::path::Path::new(&source_image_path);
+    if !source_path.is_file() {
+        return Err("Selected image file does not exist".to_string());
+    }
+
+    let ext = source_path
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| ext.to_ascii_lowercase())
+        .filter(|ext| matches!(ext.as_str(), "png" | "jpg" | "jpeg" | "webp" | "gif" | "bmp" | "svg"))
+        .ok_or_else(|| "Unsupported image format".to_string())?;
+
+    if let Some(collection) = state.db.get_collection_by_id(&collection_id)? {
+        if let Some(cover_image_path) = collection.cover_image_path {
+            remove_file_if_exists(&cover_image_path);
+        }
+    }
+
+    let dest_path = std::path::Path::new(&state.collection_covers_dir).join(format!("{collection_id}.{ext}"));
+    std::fs::copy(source_path, &dest_path).map_err(|e| e.to_string())?;
+    let dest_path_str = dest_path.to_string_lossy().to_string();
+    state.db.set_collection_cover_image(&collection_id, Some(&dest_path_str))
 }
 
 #[tauri::command]

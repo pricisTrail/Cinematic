@@ -33,6 +33,7 @@ pub struct Collection {
     pub name: String,
     pub description: String,
     pub cover_video_id: Option<String>,
+    pub cover_image_path: Option<String>,
     pub created_at: String,
     pub video_count: i64,
 }
