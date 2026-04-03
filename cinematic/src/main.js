@@ -27,6 +27,15 @@ function applyTheme(theme) {
     if (lightModeToggle) {
         lightModeToggle.checked = resolvedTheme === 'light';
     }
+
+    const themeToggleButton = document.getElementById('btn-theme-toggle');
+    if (themeToggleButton) {
+        const nextThemeLabel = resolvedTheme === 'light' ? 'dark' : 'light';
+        const buttonLabel = `Switch to ${nextThemeLabel} mode`;
+        themeToggleButton.title = buttonLabel;
+        themeToggleButton.setAttribute('aria-label', buttonLabel);
+        themeToggleButton.classList.toggle('active', resolvedTheme === 'light');
+    }
 }
 
 function setTheme(theme) {
@@ -398,6 +407,10 @@ function setupEventListeners() {
 
     // Refresh
     document.getElementById('btn-refresh').addEventListener('click', refreshLibrary);
+    document.getElementById('btn-theme-toggle').addEventListener('click', () => {
+        const currentTheme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+        setTheme(currentTheme === 'light' ? 'dark' : 'light');
+    });
 
     // Search
     document.getElementById('search-input').addEventListener('input', (e) => {
