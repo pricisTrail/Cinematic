@@ -1,6 +1,15 @@
 use std::path::Path;
 use walkdir::WalkDir;
 use crate::models::*;
+use serde_json::Value;
+
+#[derive(Debug, Clone, Default)]
+pub struct ProbedVideoMetadata {
+    pub duration_secs: Option<f64>,
+    pub width: Option<i32>,
+    pub height: Option<i32>,
+    pub embedded_artwork_stream_index: Option<i32>,
+}
 
 /// Scan a directory for video files. Returns list of file paths.
 pub fn scan_directory(dir_path: &str) -> Vec<String> {
@@ -75,47 +84,64 @@ pub fn create_video_record(file_path: &str, library_id: &str) -> Option<VideoRec
     })
 }
 
-/// Extract metadata from a video file using ffprobe
-pub fn extract_metadata(file_path: &str) -> (Option<f64>, Option<i32>, Option<i32>) {
+fn probe_media(file_path: &str) -> Option<Value> {
     let output = std::process::Command::new("ffprobe")
         .args([
             "-v", "quiet",
             "-print_format", "json",
             "-show_format",
             "-show_streams",
-            "-select_streams", "v:0",
             file_path,
         ])
-        .output();
+        .output()
+        .ok()?;
 
-    match output {
-        Ok(out) => {
-            if let Ok(json_str) = String::from_utf8(out.stdout) {
-                if let Ok(json) = serde_json::from_str::<serde_json::Value>(&json_str) {
-                    let duration = json["format"]["duration"]
-                        .as_str()
-                        .and_then(|d| d.parse::<f64>().ok());
+    let json_str = String::from_utf8(output.stdout).ok()?;
+    serde_json::from_str::<Value>(&json_str).ok()
+}
 
-                    let streams = json["streams"].as_array();
-                    let (width, height) = if let Some(streams) = streams {
-                        if let Some(stream) = streams.first() {
-                            (
-                                stream["width"].as_i64().map(|v| v as i32),
-                                stream["height"].as_i64().map(|v| v as i32),
-                            )
-                        } else {
-                            (None, None)
-                        }
-                    } else {
-                        (None, None)
-                    };
+fn is_attached_picture_stream(stream: &Value) -> bool {
+    stream["disposition"]["attached_pic"].as_i64() == Some(1)
+}
 
-                    return (duration, width, height);
-                }
-            }
-            (None, None, None)
-        }
-        Err(_) => (None, None, None),
+fn stream_index(stream: &Value) -> Option<i32> {
+    stream["index"].as_i64().map(|value| value as i32)
+}
+
+/// Extract metadata from a video file using ffprobe.
+pub fn extract_metadata(file_path: &str) -> ProbedVideoMetadata {
+    let Some(json) = probe_media(file_path) else {
+        return ProbedVideoMetadata::default();
+    };
+
+    let duration = json["format"]["duration"]
+        .as_str()
+        .and_then(|value| value.parse::<f64>().ok());
+
+    let video_streams: Vec<&Value> = json["streams"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|stream| stream["codec_type"].as_str() == Some("video"))
+        .collect();
+
+    let embedded_artwork_stream_index = video_streams
+        .iter()
+        .copied()
+        .find(|stream| is_attached_picture_stream(stream))
+        .and_then(stream_index);
+
+    let primary_video_stream = video_streams
+        .iter()
+        .copied()
+        .find(|stream| !is_attached_picture_stream(stream))
+        .or_else(|| video_streams.first().copied());
+
+    ProbedVideoMetadata {
+        duration_secs: duration,
+        width: primary_video_stream.and_then(|stream| stream["width"].as_i64().map(|value| value as i32)),
+        height: primary_video_stream.and_then(|stream| stream["height"].as_i64().map(|value| value as i32)),
+        embedded_artwork_stream_index,
     }
 }
 
@@ -134,6 +160,34 @@ pub fn generate_thumbnail(video_path: &str, output_path: &str, timestamp_secs: f
             "-ss", &timestamp,
             "-i", video_path,
             "-vframes", "1",
+            "-q:v", "3",
+            "-vf", "scale=480:-1",
+            output_path,
+        ])
+        .output()
+        .map_err(|e| format!("Failed to run ffmpeg: {}", e))?;
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        Err(format!("ffmpeg failed: {}", stderr))
+    }
+}
+
+/// Extract embedded cover artwork into the thumbnail slot when the container has an attached picture stream.
+pub fn extract_embedded_artwork(video_path: &str, output_path: &str, stream_index: i32) -> Result<(), String> {
+    if let Some(parent) = Path::new(output_path).parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+
+    let map_arg = format!("0:{stream_index}");
+    let output = std::process::Command::new("ffmpeg")
+        .args([
+            "-y",
+            "-i", video_path,
+            "-map", &map_arg,
+            "-frames:v", "1",
             "-q:v", "3",
             "-vf", "scale=480:-1",
             output_path,

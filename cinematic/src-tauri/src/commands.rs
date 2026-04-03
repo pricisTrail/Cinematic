@@ -499,23 +499,71 @@ pub fn scan_all_libraries(state: State<'_, AppState>) -> Result<Vec<VideoRecord>
 
 // ─── Thumbnail Commands ───
 
+fn thumbnail_timestamp(duration_secs: Option<f64>) -> f64 {
+    duration_secs
+        .map(|duration| (duration * 0.1).min(duration - 1.0).max(0.0))
+        .unwrap_or(5.0)
+}
+
+fn thumbnail_path_for(thumbnails_dir: &str, video_id: &str) -> std::path::PathBuf {
+    std::path::Path::new(thumbnails_dir).join(format!("{video_id}.jpg"))
+}
+
+fn sync_thumbnail_for_video(
+    state: &AppState,
+    video_id: &str,
+    video_path: &str,
+    duration_secs: Option<f64>,
+    embedded_artwork_stream_index: Option<i32>,
+    prefer_embedded_artwork: bool,
+) -> Result<bool, String> {
+    let thumb_path = thumbnail_path_for(&state.thumbnails_dir, video_id);
+    let thumb_path_str = thumb_path.to_string_lossy().to_string();
+
+    if let Some(stream_index) = embedded_artwork_stream_index {
+        if prefer_embedded_artwork || !thumb_path.exists() {
+            if scanner::extract_embedded_artwork(video_path, &thumb_path_str, stream_index).is_ok() {
+                state.db.update_thumbnail(video_id, &thumb_path_str)?;
+                return Ok(true);
+            }
+        }
+    }
+
+    if thumb_path.exists() {
+        state.db.update_thumbnail(video_id, &thumb_path_str)?;
+        return Ok(false);
+    }
+
+    if scanner::generate_thumbnail(video_path, &thumb_path_str, thumbnail_timestamp(duration_secs)).is_ok() {
+        state.db.update_thumbnail(video_id, &thumb_path_str)?;
+        return Ok(true);
+    }
+
+    Ok(false)
+}
+
 #[tauri::command]
 pub fn generate_thumbnails(state: State<'_, AppState>) -> Result<usize, String> {
     let videos = state.db.get_videos_without_thumbnails()?;
     let mut generated = 0;
 
     for video in &videos {
-        // Pick a timestamp: 10% into the video or 5 seconds
-        let timestamp = video.duration_secs
-            .map(|d| (d * 0.1).min(d - 1.0).max(0.0))
-            .unwrap_or(5.0);
+        let metadata = scanner::extract_metadata(&video.path);
 
-        let thumb_filename = format!("{}.jpg", video.id);
-        let thumb_path = std::path::Path::new(&state.thumbnails_dir).join(&thumb_filename);
-        let thumb_path_str = thumb_path.to_string_lossy().to_string();
+        if video.duration_secs.is_none() || video.width.is_none() || video.height.is_none() {
+            state.db.update_video_metadata(&video.id, metadata.duration_secs, metadata.width, metadata.height)?;
+        }
 
-        if scanner::generate_thumbnail(&video.path, &thumb_path_str, timestamp).is_ok() {
-            state.db.update_thumbnail(&video.id, &thumb_path_str)?;
+        let duration_secs = video.duration_secs.or(metadata.duration_secs);
+
+        if sync_thumbnail_for_video(
+            &state,
+            &video.id,
+            &video.path,
+            duration_secs,
+            metadata.embedded_artwork_stream_index,
+            false,
+        )? {
             generated += 1;
         }
     }
@@ -525,25 +573,18 @@ pub fn generate_thumbnails(state: State<'_, AppState>) -> Result<usize, String> 
 
 #[tauri::command]
 pub fn extract_video_metadata(state: State<'_, AppState>, video_id: String, video_path: String) -> Result<(), String> {
-    let (duration, width, height) = scanner::extract_metadata(&video_path);
-    state.db.update_video_metadata(&video_id, duration, width, height)?;
-    
-    // Also try to generate thumbnail if missing
-    if duration.is_some() {
-        let timestamp = duration
-            .map(|d| (d * 0.1).min(d - 1.0).max(0.0))
-            .unwrap_or(5.0);
-        let thumb_filename = format!("{}.jpg", video_id);
-        let thumb_path = std::path::Path::new(&state.thumbnails_dir).join(&thumb_filename);
-        let thumb_path_str = thumb_path.to_string_lossy().to_string();
-        
-        if !thumb_path.exists() {
-            if scanner::generate_thumbnail(&video_path, &thumb_path_str, timestamp).is_ok() {
-                state.db.update_thumbnail(&video_id, &thumb_path_str)?;
-            }
-        }
-    }
-    
+    let metadata = scanner::extract_metadata(&video_path);
+    state.db.update_video_metadata(&video_id, metadata.duration_secs, metadata.width, metadata.height)?;
+
+    sync_thumbnail_for_video(
+        &state,
+        &video_id,
+        &video_path,
+        metadata.duration_secs,
+        metadata.embedded_artwork_stream_index,
+        true,
+    )?;
+
     Ok(())
 }
 
