@@ -5,6 +5,36 @@
 const { invoke } = window.__TAURI__.core;
 const { getCurrentWindow } = window.__TAURI__.window;
 const appWindow = getCurrentWindow();
+const THEME_STORAGE_KEY = 'cinematic-theme';
+
+function getPreferredTheme() {
+    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (storedTheme === 'light' || storedTheme === 'dark') {
+        return storedTheme;
+    }
+
+    return window.matchMedia('(prefers-color-scheme: light)').matches
+        ? 'light'
+        : 'dark';
+}
+
+function applyTheme(theme) {
+    const resolvedTheme = theme === 'light' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = resolvedTheme;
+    document.documentElement.style.colorScheme = resolvedTheme;
+
+    const lightModeToggle = document.getElementById('setting-light-mode');
+    if (lightModeToggle) {
+        lightModeToggle.checked = resolvedTheme === 'light';
+    }
+}
+
+function setTheme(theme) {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+    applyTheme(theme);
+}
+
+applyTheme(getPreferredTheme());
 
 // ─── Custom Titlebar ───
 document.getElementById('titlebar-minimize').addEventListener('click', () => appWindow.minimize());
@@ -307,6 +337,14 @@ function setupEventListeners() {
         autoExpandToggle.checked = localStorage.getItem('sidebar-auto-expand') === 'true';
         autoExpandToggle.addEventListener('change', (e) => {
             localStorage.setItem('sidebar-auto-expand', e.target.checked);
+        });
+    }
+
+    const lightModeToggle = document.getElementById('setting-light-mode');
+    if (lightModeToggle) {
+        lightModeToggle.checked = document.documentElement.dataset.theme === 'light';
+        lightModeToggle.addEventListener('change', (e) => {
+            setTheme(e.target.checked ? 'light' : 'dark');
         });
     }
 
