@@ -15,6 +15,12 @@ const HTTP_CONNECT_TIMEOUT: Duration = Duration::from_millis(750);
 const MIN_RESUME_SECS: f64 = 5.0;
 const WATCHED_COMPLETION_RATIO: f64 = 0.98;
 const WATCHED_COMPLETION_GRACE_SECS: f64 = 15.0;
+const THUMBNAIL_TIMESTAMP_FALLBACK_SECS: f64 = 5.0;
+const THUMBNAIL_TIMESTAMP_RATIO: f64 = 0.1;
+const THUMBNAIL_TIMESTAMP_CAP_SECS: f64 = 90.0;
+const THUMBNAIL_TIMESTAMP_TRAILING_GAP_SECS: f64 = 1.0;
+const DEFAULT_THUMBNAIL_BATCH_SIZE: usize = 3;
+const MAX_THUMBNAIL_BATCH_SIZE: usize = 8;
 
 #[derive(Debug, Clone)]
 pub(crate) struct ManagedPlaybackSession {
@@ -501,8 +507,18 @@ pub fn scan_all_libraries(state: State<'_, AppState>) -> Result<Vec<VideoRecord>
 
 fn thumbnail_timestamp(duration_secs: Option<f64>) -> f64 {
     duration_secs
-        .map(|duration| (duration * 0.1).min(duration - 1.0).max(0.0))
-        .unwrap_or(5.0)
+        .map(|duration| {
+            let duration = duration.max(0.0);
+            if duration <= THUMBNAIL_TIMESTAMP_TRAILING_GAP_SECS {
+                0.0
+            } else {
+                (duration * THUMBNAIL_TIMESTAMP_RATIO)
+                    .min(THUMBNAIL_TIMESTAMP_CAP_SECS)
+                    .min(duration - THUMBNAIL_TIMESTAMP_TRAILING_GAP_SECS)
+                    .max(0.0)
+            }
+        })
+        .unwrap_or(THUMBNAIL_TIMESTAMP_FALLBACK_SECS)
 }
 
 fn thumbnail_path_for(thumbnails_dir: &str, video_id: &str) -> std::path::PathBuf {
@@ -543,8 +559,11 @@ fn sync_thumbnail_for_video(
 }
 
 #[tauri::command]
-pub fn generate_thumbnails(state: State<'_, AppState>) -> Result<usize, String> {
-    let videos = state.db.get_videos_without_thumbnails()?;
+pub fn generate_thumbnails(state: State<'_, AppState>, max_count: Option<usize>) -> Result<usize, String> {
+    let batch_size = max_count
+        .unwrap_or(DEFAULT_THUMBNAIL_BATCH_SIZE)
+        .clamp(1, MAX_THUMBNAIL_BATCH_SIZE);
+    let videos = state.db.get_videos_without_thumbnails(batch_size)?;
     let mut generated = 0;
 
     for video in &videos {

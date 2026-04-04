@@ -6,6 +6,9 @@ const { invoke } = window.__TAURI__.core;
 const { getCurrentWindow } = window.__TAURI__.window;
 const appWindow = getCurrentWindow();
 const THEME_STORAGE_KEY = 'cinematic-theme';
+const BACKGROUND_METADATA_BATCH_SIZE = 1;
+const BACKGROUND_THUMBNAIL_BATCH_SIZE = 2;
+const BACKGROUND_ENRICH_DELAY_MS = 180;
 
 function getPreferredTheme() {
     const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
@@ -81,6 +84,8 @@ let isListView = false;
 let thumbnailCache = {};
 let collectionCoverCache = {};
 let syncVideosPromise = null;
+let videoEnrichmentPromise = null;
+let videoEnrichmentQueued = false;
 let activeVideoMenuId = null;
 let collectionPickerVideo = null;
 let collectionThumbnailTarget = null;
@@ -108,8 +113,7 @@ async function loadData() {
         // Start loading thumbnails in background
         loadThumbnailsBatch();
         loadCollectionCoversBatch();
-        // Extract metadata for videos without it
-        extractMetadataBatch();
+        queueVideoEnrichment();
     } catch (e) {
         console.error('Failed to load data:', e);
         showToast('Failed to load library data', 'error');
@@ -150,30 +154,73 @@ async function loadCollectionCoversBatch() {
     }
 }
 
-async function extractMetadataBatch() {
-    const needsMeta = allVideos.filter(v => !v.duration_secs);
-    for (const video of needsMeta.slice(0, 30)) {
-        try {
-            await invoke('extract_video_metadata', { videoId: video.id, videoPath: video.path });
-        } catch (e) {
-            // ignore
-        }
-    }
-    // Reload videos after metadata extraction
-    if (needsMeta.length > 0) {
-        allVideos = await invoke('get_all_videos');
-        renderCurrentView();
-        // Generate thumbnails for newly extracted
-        try {
-            const count = await invoke('generate_thumbnails');
-            if (count > 0) {
-                allVideos = await invoke('get_all_videos');
-                renderCurrentView();
-                loadThumbnailsBatch();
+function hasPendingVideoEnrichment() {
+    return allVideos.some(video => !video.duration_secs || !video.thumbnail_path);
+}
+
+function delay(ms) {
+    return new Promise(resolve => window.setTimeout(resolve, ms));
+}
+
+function queueVideoEnrichment() {
+    if (videoEnrichmentQueued) return;
+    videoEnrichmentQueued = true;
+
+    window.setTimeout(async () => {
+        videoEnrichmentQueued = false;
+        await runVideoEnrichmentCycle();
+    }, 0);
+}
+
+async function runVideoEnrichmentCycle() {
+    if (videoEnrichmentPromise) return videoEnrichmentPromise;
+
+    videoEnrichmentPromise = (async () => {
+        let changed = false;
+        const needsMeta = allVideos.filter(video => !video.duration_secs).slice(0, BACKGROUND_METADATA_BATCH_SIZE);
+
+        for (const video of needsMeta) {
+            try {
+                await invoke('extract_video_metadata', { videoId: video.id, videoPath: video.path });
+                changed = true;
+            } catch (e) {
+                // ignore and continue with the remaining queue
             }
-        } catch (e) {
-            // ignore
         }
+
+        try {
+            const count = await invoke('generate_thumbnails', { maxCount: BACKGROUND_THUMBNAIL_BATCH_SIZE });
+            changed = changed || count > 0;
+        } catch (e) {
+            // ignore and retry on the next scheduled cycle
+        }
+
+        if (changed) {
+            allVideos = await invoke('get_all_videos');
+            renderCurrentView();
+            updateStats();
+            loadThumbnailsBatch();
+        }
+    })().finally(async () => {
+        videoEnrichmentPromise = null;
+
+        if (hasPendingVideoEnrichment()) {
+            await delay(BACKGROUND_ENRICH_DELAY_MS);
+            queueVideoEnrichment();
+        }
+    });
+
+    return videoEnrichmentPromise;
+}
+
+async function refreshVideosAfterScan() {
+    allVideos = await invoke('get_all_videos');
+    renderCurrentView();
+    updateStats();
+    loadThumbnailsBatch();
+
+    if (hasPendingVideoEnrichment()) {
+        queueVideoEnrichment();
     }
 }
 
@@ -1358,22 +1405,9 @@ async function scanLibrary(libraryId, libraryPath) {
     showLoading('Scanning library...');
     try {
         const videos = await invoke('scan_library', { libraryId, libraryPath });
-        // Update all videos
-        allVideos = await invoke('get_all_videos');
-        renderCurrentView();
-        updateStats();
+        await refreshVideosAfterScan();
         showToast(`Found ${videos.length} videos`, 'success');
-        
-        // Generate thumbnails in background
         hideLoading();
-        showToast('Generating thumbnails...', 'success');
-        const count = await invoke('generate_thumbnails');
-        if (count > 0) {
-            allVideos = await invoke('get_all_videos');
-            renderCurrentView();
-            loadThumbnailsBatch();
-            showToast(`Generated ${count} thumbnails`, 'success');
-        }
     } catch (e) {
         hideLoading();
         showToast('Scan failed: ' + e, 'error');
@@ -1386,21 +1420,11 @@ async function scanAllLibraries() {
         const btn = document.getElementById('btn-refresh');
         btn.classList.add('spinning');
         
-        allVideos = await invoke('scan_all_libraries');
-        renderCurrentView();
-        updateStats();
+        await invoke('scan_all_libraries');
+        await refreshVideosAfterScan();
         showToast(`Library updated: ${allVideos.length} videos`, 'success');
         
         hideLoading();
-        
-        // Generate thumbnails
-        const count = await invoke('generate_thumbnails');
-        if (count > 0) {
-            allVideos = await invoke('get_all_videos');
-            renderCurrentView();
-            loadThumbnailsBatch();
-        }
-        
         btn.classList.remove('spinning');
     } catch (e) {
         hideLoading();

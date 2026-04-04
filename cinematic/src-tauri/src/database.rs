@@ -353,12 +353,12 @@ impl Database {
         Ok(paths)
     }
 
-    pub fn get_videos_without_thumbnails(&self) -> Result<Vec<VideoRecord>, String> {
+    pub fn get_videos_without_thumbnails(&self, limit: usize) -> Result<Vec<VideoRecord>, String> {
         let conn = self.conn.lock().map_err(|e| e.to_string())?;
         let mut stmt = conn.prepare(
-            "SELECT id, library_id, path, title, file_name, file_size, duration_secs, width, height, thumbnail_path, watched, watch_progress_secs, favorite, date_added, date_modified FROM videos WHERE thumbnail_path IS NULL OR thumbnail_path = '' LIMIT 50"
+            "SELECT id, library_id, path, title, file_name, file_size, duration_secs, width, height, thumbnail_path, watched, watch_progress_secs, favorite, date_added, date_modified FROM videos WHERE thumbnail_path IS NULL OR thumbnail_path = '' LIMIT ?1"
         ).map_err(|e| e.to_string())?;
-        let videos = stmt.query_map([], |row| {
+        let videos = stmt.query_map(params![limit as i64], |row| {
             Ok(VideoRecord {
                 id: row.get(0)?,
                 library_id: row.get(1)?,

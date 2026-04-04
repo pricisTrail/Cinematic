@@ -2,6 +2,13 @@ use std::path::Path;
 use walkdir::WalkDir;
 use crate::models::*;
 use serde_json::Value;
+use std::process::Command;
+
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 #[derive(Debug, Clone, Default)]
 pub struct ProbedVideoMetadata {
@@ -85,8 +92,9 @@ pub fn create_video_record(file_path: &str, library_id: &str) -> Option<VideoRec
 }
 
 fn probe_media(file_path: &str) -> Option<Value> {
-    let output = std::process::Command::new("ffprobe")
+    let output = media_command("ffprobe")
         .args([
+            "-nostdin",
             "-v", "quiet",
             "-print_format", "json",
             "-show_format",
@@ -98,6 +106,15 @@ fn probe_media(file_path: &str) -> Option<Value> {
 
     let json_str = String::from_utf8(output.stdout).ok()?;
     serde_json::from_str::<Value>(&json_str).ok()
+}
+
+fn media_command(binary: &str) -> Command {
+    let mut command = Command::new(binary);
+
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
+
+    command
 }
 
 fn is_attached_picture_stream(stream: &Value) -> bool {
@@ -154,9 +171,11 @@ pub fn generate_thumbnail(video_path: &str, output_path: &str, timestamp_secs: f
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
 
-    let output = std::process::Command::new("ffmpeg")
+    let output = media_command("ffmpeg")
         .args([
             "-y",
+            "-nostdin",
+            "-v", "error",
             "-ss", &timestamp,
             "-i", video_path,
             "-vframes", "1",
@@ -182,9 +201,11 @@ pub fn extract_embedded_artwork(video_path: &str, output_path: &str, stream_inde
     }
 
     let map_arg = format!("0:{stream_index}");
-    let output = std::process::Command::new("ffmpeg")
+    let output = media_command("ffmpeg")
         .args([
             "-y",
+            "-nostdin",
+            "-v", "error",
             "-i", video_path,
             "-map", &map_arg,
             "-frames:v", "1",
