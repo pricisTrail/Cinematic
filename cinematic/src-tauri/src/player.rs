@@ -757,6 +757,12 @@ fn create_session(
     if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
         let _ = window.set_focus();
     }
+    let main_hwnd = app
+        .get_webview_window(MAIN_WINDOW_LABEL)
+        .ok_or_else(|| "The main Cinematic window is not available.".to_string())?
+        .hwnd()
+        .map_err(|e| e.to_string())?
+        .0 as isize;
 
     let host_hwnd = create_player_host_window(app, &manager)?;
     let pipe_name = format!(r"\\.\pipe\cinematic-mpv-{}", uuid::Uuid::new_v4());
@@ -822,6 +828,7 @@ fn create_session(
 
     manager.set(session.clone());
     layout_player_surfaces(app, &manager)?;
+    spawn_focus_watch_thread(app.clone(), manager.clone(), session.clone(), main_hwnd);
     spawn_reader_thread(app.clone(), db, manager.clone(), session.clone(), ipc_reader)?;
     emit_player_state(app, &session.snapshot());
 
@@ -980,6 +987,85 @@ pub fn toggle_pause(manager: Arc<PlayerManager>) -> Result<(), String> {
 }
 
 #[cfg(target_os = "windows")]
+pub fn refresh_paused_frame(manager: Arc<PlayerManager>) -> Result<(), String> {
+    let Some(session) = manager.get() else {
+        return Ok(());
+    };
+    let (ipc_writer, host_hwnd, paused_position_secs) = {
+        let shared = session.shared.lock().map_err(|e| e.to_string())?;
+        if !shared.snapshot.is_loaded || !shared.snapshot.paused {
+            return Ok(());
+        }
+
+        (
+            shared.ipc_writer.clone(),
+            shared.host_hwnd,
+            shared.snapshot.position_secs.max(0.0),
+        )
+    };
+
+    // 1. Invalidate the host window and all children (including mpv's render
+    //    surface) so that DWM recomposes the popup after the Alt-Tab
+    //    transition.  The STATIC-class host window does not self-repair
+    //    because it has no meaningful WM_PAINT handler.
+    unsafe {
+        let hwnd = windows::Win32::Foundation::HWND(host_hwnd as _);
+        let _ = windows::Win32::Graphics::Gdi::InvalidateRect(Some(hwnd), None, true);
+        let _ = windows::Win32::Graphics::Gdi::RedrawWindow(
+            Some(hwnd),
+            None,
+            None,
+            windows::Win32::Graphics::Gdi::RDW_INVALIDATE
+                | windows::Win32::Graphics::Gdi::RDW_ALLCHILDREN
+                | windows::Win32::Graphics::Gdi::RDW_UPDATENOW,
+        );
+    }
+
+    // 2. Ask mpv to re-decode and redisplay the exact current frame.
+    //    Seeking to the current position with "exact" forces the video
+    //    output to refresh without changing the playback state at all —
+    //    no pause toggle, no frame drift.
+    let _ = write_ipc_command(
+        &ipc_writer,
+        json!({ "command": ["seek", paused_position_secs, "absolute", "exact"] }),
+    );
+
+    Ok(())
+}
+
+#[cfg(target_os = "windows")]
+fn spawn_focus_watch_thread(
+    app: AppHandle,
+    manager: Arc<PlayerManager>,
+    session: Arc<PlayerSession>,
+    main_hwnd: isize,
+) {
+    std::thread::spawn(move || {
+        let mut had_focus =
+            unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow().0 as isize == main_hwnd };
+
+        while !session.terminated.load(Ordering::SeqCst) {
+            let has_focus =
+                unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow().0 as isize == main_hwnd };
+
+            if has_focus && !had_focus {
+                // Relayout first to ensure geometry is correct.
+                let _ = layout_player_surfaces(&app, &manager);
+
+                // Small delay to let DWM finish the window transition
+                // before we force the redraw + seek.
+                std::thread::sleep(Duration::from_millis(30));
+
+                let _ = refresh_paused_frame(manager.clone());
+            }
+
+            had_focus = has_focus;
+            std::thread::sleep(Duration::from_millis(75));
+        }
+    });
+}
+
+#[cfg(target_os = "windows")]
 pub fn seek_relative(manager: Arc<PlayerManager>, seconds: f64) -> Result<(), String> {
     let Some(session) = manager.get() else {
         return Err("The internal player is not open.".to_string());
@@ -1106,6 +1192,11 @@ pub fn set_surface_bounds(
 
 #[cfg(not(target_os = "windows"))]
 pub fn toggle_pause(_manager: Arc<PlayerManager>) -> Result<(), String> {
+    Err("The internal player is only available on Windows right now.".to_string())
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn refresh_paused_frame(_manager: Arc<PlayerManager>) -> Result<(), String> {
     Err("The internal player is only available on Windows right now.".to_string())
 }
 
