@@ -1135,11 +1135,14 @@ body.is-playing .inline-player-stage-frame {
     top: 16px;
     left: 16px;
     z-index: 12;
-    width: 36px;
+    max-width: min(44vw, 420px);
+    min-width: 36px;
     height: 36px;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    gap: 10px;
+    padding: 0 14px 0 10px;
+    justify-content: flex-start;
     border-radius: 999px;
     background: rgba(0, 0, 0, 0.45);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1148,6 +1151,21 @@ body.is-playing .inline-player-stage-frame {
     -webkit-backdrop-filter: blur(8px);
     cursor: pointer;
     transition: opacity 300ms var(--ease-smooth), visibility 300ms var(--ease-smooth), transform 120ms var(--ease-smooth), background 120ms var(--ease-smooth);
+}
+
+.player-back-btn svg {
+    flex: 0 0 auto;
+}
+
+.player-back-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: rgba(255, 255, 255, 0.88);
 }
 
 .player-back-btn:hover {

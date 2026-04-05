@@ -1,6 +1,6 @@
 [package]
 name = "cinematic"
-version = "0.1.0"
+version = "0.1.5"
 description = "A premium local video library manager"
 authors = ["you"]
 edition = "2021"

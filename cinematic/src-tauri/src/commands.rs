@@ -820,6 +820,7 @@ pub fn open_external_player(
         command
             .arg("--play-and-exit")
             .arg("--no-one-instance")
+            .arg("--fullscreen")
             .arg("--extraintf=http")
             .arg("--http-host=127.0.0.1")
             .arg(format!("--http-port={control_port}"))

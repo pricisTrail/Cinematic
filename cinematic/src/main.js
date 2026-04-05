@@ -198,6 +198,11 @@ function showInlinePlayerShell(title = 'Opening player...', path = 'Bundled mpv 
     setInlinePlayerVisibility(true);
     document.body.classList.add('is-playing');
     document.getElementById('player-title').textContent = title;
+    const backTitle = document.getElementById('player-back-title');
+    if (backTitle) {
+        backTitle.textContent = title;
+        backTitle.title = title;
+    }
     document.getElementById('player-subtitle').textContent = path;
     document.getElementById('player-status').textContent = inlinePlayerPending ? 'Preparing video...' : 'Loading video...';
 }
@@ -2468,12 +2473,6 @@ async function playVideo(video) {
         }
 
         if (isInternal && !result.fallback_used) {
-            showToast(
-                result.resumed
-                    ? `Resuming in Cinematic from ${formatDuration(result.resume_position_secs)}...`
-                    : 'Opening in Cinematic...',
-                'success'
-            );
             schedulePlaybackSync();
             scheduleInlinePlayerSurfaceSyncBurst();
             refreshInlinePlayerSnapshot();
