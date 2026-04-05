@@ -518,7 +518,7 @@ fn build_mpv_command(
         .arg("--idle=yes")
         .arg("--force-window=immediate")
         .arg("--osc=no")
-        .arg("--sub-auto=all")
+        .arg("--sub-auto=exact")
         .arg("--embeddedfonts=yes")
         .arg("--hwdec=auto-safe")
         .arg("--save-position-on-quit=no")
@@ -951,7 +951,7 @@ fn create_session(
     let fullscreen = app
         .get_webview_window(MAIN_WINDOW_LABEL)
         .ok_or_else(|| "The main Cinematic window is not available.".to_string())?
-        .is_fullscreen()
+        .is_maximized()
         .map_err(|e| e.to_string())?;
 
     let session = Arc::new(PlayerSession {
@@ -1329,8 +1329,12 @@ pub fn toggle_fullscreen(app: AppHandle, manager: Arc<PlayerManager>) -> Result<
     let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) else {
         return Err("The internal player is not open.".to_string());
     };
-    let next = !window.is_fullscreen().map_err(|e| e.to_string())?;
-    window.set_fullscreen(next).map_err(|e| e.to_string())?;
+    let next = !window.is_maximized().map_err(|e| e.to_string())?;
+    if next {
+        window.maximize().map_err(|e| e.to_string())?;
+    } else {
+        window.unmaximize().map_err(|e| e.to_string())?;
+    }
     if let Some(session) = manager.get() {
         if let Ok(mut shared) = session.shared.lock() {
             shared.snapshot.fullscreen = next;
@@ -1429,5 +1433,3 @@ pub fn toggle_fullscreen(_app: AppHandle, _manager: Arc<PlayerManager>) -> Resul
 pub fn close(_app: AppHandle, _manager: Arc<PlayerManager>) -> Result<(), String> {
     Ok(())
 }
-
-

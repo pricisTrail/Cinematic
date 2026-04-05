@@ -8,6 +8,10 @@ use commands::AppState;
 use std::sync::Arc;
 use tauri::Manager;
 
+fn reassert_main_window_presentation(window: &tauri::Window) {
+    let _ = window.set_decorations(false);
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -44,11 +48,7 @@ pub fn run() {
         .on_window_event(|window, event| match event {
             tauri::WindowEvent::Focused(focused) => {
                 if *focused {
-                    if let Ok(is_fullscreen) = window.is_fullscreen() {
-                        if is_fullscreen {
-                            let _ = window.set_decorations(false);
-                        }
-                    }
+                    reassert_main_window_presentation(window);
                 }
             }
             _ => {}

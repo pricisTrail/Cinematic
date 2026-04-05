@@ -13,12 +13,14 @@ const PLAYER_STATE_EVENT = 'player://state';
 const BACKGROUND_METADATA_BATCH_SIZE = 1;
 const BACKGROUND_THUMBNAIL_BATCH_SIZE = 2;
 const BACKGROUND_ENRICH_DELAY_MS = 180;
+const PLAYER_SPEED_STEPS = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 let playbackSyncTimeout = null;
 const playerState = {
     duration_secs: 0,
     position_secs: 0,
     paused: false,
     volume: 100,
+    speed: 1,
     fullscreen: false,
     title: null,
     video_id: null,
@@ -36,6 +38,9 @@ let playerSurfaceObserver = null;
 let playerIdleTimeout = null;
 let playerPreMuteVolume = 100;
 let playerLastVideoId = null;
+let playerShortcutFeedbackTimeout = null;
+const playerPendingSnapshotOverrides = {};
+let playerShowRemainingTime = false;
 
 function getPreferredTheme() {
     const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
@@ -199,14 +204,258 @@ function showInlinePlayerShell(title = 'Opening player...', path = 'Bundled mpv 
 
 function hideInlinePlayerShell() {
     inlinePlayerPending = false;
+    clearTimeout(playerShortcutFeedbackTimeout);
+    document.getElementById('player-shortcut-feedback')?.classList.remove('visible');
     if (playerSurfaceSyncFrame) {
         window.cancelAnimationFrame(playerSurfaceSyncFrame);
         playerSurfaceSyncFrame = null;
     }
     setInlinePlayerVisibility(false);
     document.body.classList.remove('is-playing');
-    appWindow.setFullscreen(false).catch(error => console.error("Failed to exit auto-fullscreen:", error));
+    appWindow.unmaximize().catch(error => console.error("Failed to exit player maximize mode:", error));
     document.body.classList.remove('is-fullscreen');
+}
+
+function isEditableElement(element = document.activeElement) {
+    const activeTag = element?.tagName;
+    return Boolean(
+        element?.isContentEditable
+        || activeTag === 'INPUT'
+        || activeTag === 'TEXTAREA'
+        || activeTag === 'SELECT'
+    );
+}
+
+function clampNumber(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+}
+
+function valuesMatchForPlayerState(key, left, right) {
+    if (key === 'volume') {
+        return Math.abs(Number(left) - Number(right)) < 0.6;
+    }
+    return left === right;
+}
+
+function setPendingPlayerOverride(key, value, ttlMs = 1200) {
+    playerPendingSnapshotOverrides[key] = {
+        value,
+        expiresAt: Date.now() + ttlMs,
+    };
+    playerState[key] = value;
+}
+
+function applyPendingPlayerOverrides(snapshot) {
+    const now = Date.now();
+    for (const [key, pending] of Object.entries(playerPendingSnapshotOverrides)) {
+        if (!pending) continue;
+
+        if (snapshot && Object.prototype.hasOwnProperty.call(snapshot, key) && valuesMatchForPlayerState(key, snapshot[key], pending.value)) {
+            delete playerPendingSnapshotOverrides[key];
+            continue;
+        }
+
+        if (pending.expiresAt <= now) {
+            delete playerPendingSnapshotOverrides[key];
+            continue;
+        }
+
+        playerState[key] = pending.value;
+    }
+}
+
+function getCurrentPlayerVolume() {
+    const sliderValue = Number(document.getElementById('player-volume')?.value);
+    if (Number.isFinite(sliderValue)) {
+        return Math.round(sliderValue);
+    }
+    return Number.isFinite(playerState.volume) ? Math.round(playerState.volume) : 100;
+}
+
+function formatRemainingDuration(positionSecs, durationSecs) {
+    if (!durationSecs && durationSecs !== 0) return '';
+    const remainingSecs = Math.max(0, (Number(durationSecs) || 0) - (Number(positionSecs) || 0));
+    return `− ${formatDuration(remainingSecs) || '0:00'}`;
+}
+
+function renderPlayerTimeDisplay(positionSecs = playerState.position_secs, durationSecs = playerState.duration_secs) {
+    const timeCurrent = document.getElementById('player-time-current');
+    const timeTotal = document.getElementById('player-time-total');
+    const timeDisplay = document.getElementById('player-time-display');
+    if (!timeCurrent || !timeTotal || !timeDisplay) return;
+
+    timeCurrent.textContent = playerShowRemainingTime
+        ? formatRemainingDuration(positionSecs, durationSecs)
+        : formatDuration(positionSecs);
+    timeTotal.textContent = formatDuration(durationSecs);
+    timeDisplay.classList.toggle('showing-remaining', playerShowRemainingTime);
+    timeDisplay.title = playerShowRemainingTime ? 'Show elapsed time' : 'Show remaining time';
+    timeDisplay.setAttribute('aria-label', playerShowRemainingTime ? 'Show elapsed time' : 'Show remaining time');
+}
+
+function togglePlayerTimeDisplayMode() {
+    playerShowRemainingTime = !playerShowRemainingTime;
+    renderPlayerTimeDisplay();
+}
+
+function setPlayerSpeedLabel(speed) {
+    const label = Math.abs(speed - 1) < 0.01 ? 'Normal' : `${speed}x`;
+    const speedLabel = document.getElementById('settings-val-speed');
+    if (speedLabel) {
+        speedLabel.textContent = label;
+    }
+    return label;
+}
+
+function pulsePlayerControl(controlId) {
+    const control = document.getElementById(controlId);
+    if (!control) return;
+    control.classList.remove('shortcut-pulse');
+    void control.offsetWidth;
+    control.classList.add('shortcut-pulse');
+    window.setTimeout(() => {
+        control.classList.remove('shortcut-pulse');
+    }, 360);
+}
+
+function getPlayerShortcutFeedbackIcon(icon) {
+    switch (icon) {
+        case 'back':
+            return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>`;
+        case 'play':
+            return `<svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="8,5 19,12 8,19" fill="currentColor" stroke="none"/></svg>`;
+        case 'pause':
+            return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v14"/><path d="M15 5v14"/></svg>`;
+        case 'seek-back':
+            return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 7l-6 5 6 5V7z"/><path d="M19 7l-6 5 6 5V7z"/></svg>`;
+        case 'seek-forward':
+            return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 7l6 5-6 5V7z"/><path d="M5 7l6 5-6 5V7z"/></svg>`;
+        case 'volume-up':
+            return `<svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 010 7"/><path d="M18.5 5.5a9 9 0 010 13"/></svg>`;
+        case 'volume-down':
+            return `<svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 010 7"/></svg>`;
+        case 'mute':
+            return `<svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M23 9l-6 6"/><path d="M17 9l6 6"/></svg>`;
+        case 'subtitles-on':
+            return `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M10 10.5a1.5 1.5 0 00-3 0v3a1.5 1.5 0 003 0"/><path d="M17 10.5a1.5 1.5 0 00-3 0v3a1.5 1.5 0 003 0"/></svg>`;
+        case 'subtitles-off':
+            return `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M4 4l16 16"/></svg>`;
+        case 'fullscreen-enter':
+            return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 00-2 2v3"/><path d="M16 3h3a2 2 0 012 2v3"/><path d="M8 21H5a2 2 0 01-2-2v-3"/><path d="M16 21h3a2 2 0 002-2v-3"/></svg>`;
+        case 'fullscreen-exit':
+            return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3H5v4"/><path d="M15 3h4v4"/><path d="M9 21H5v-4"/><path d="M19 21h-4v-4"/></svg>`;
+        case 'speed-down':
+            return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19a7 7 0 1114 0"/><path d="M12 12l-3 3"/><path d="M5 5l-2 2"/><path d="M16 5l3 3"/><path d="M7 22h5"/></svg>`;
+        case 'speed-up':
+            return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19a7 7 0 1114 0"/><path d="M12 12l4-2"/><path d="M5 5l-2 2"/><path d="M16 5l3 3"/><path d="M12 22h5"/></svg>`;
+        default:
+            return `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/></svg>`;
+    }
+}
+
+function showPlayerShortcutFeedback(icon, controlId, options = {}) {
+    if (!isInlinePlayerVisible()) return;
+
+    if (controlId) {
+        pulsePlayerControl(controlId);
+    }
+
+    const feedback = document.getElementById('player-shortcut-feedback');
+    const feedbackIcon = document.getElementById('player-shortcut-feedback-icon');
+    const feedbackDetail = document.getElementById('player-shortcut-feedback-detail');
+    if (!feedback || !feedbackIcon || !feedbackDetail) return;
+
+    feedbackIcon.innerHTML = getPlayerShortcutFeedbackIcon(icon);
+    if (typeof options.volume === 'number') {
+        const volume = clampNumber(Math.round(options.volume), 0, 100);
+        feedback.classList.add('volume-mode');
+        feedbackDetail.innerHTML = `
+            <div class="player-shortcut-volume-bar" aria-hidden="true">
+                <div class="player-shortcut-volume-fill" style="height: ${volume}%;"></div>
+            </div>
+            <div class="player-shortcut-volume-value">${volume}%</div>
+        `;
+    } else {
+        feedback.classList.remove('volume-mode');
+        feedbackDetail.innerHTML = '';
+    }
+    feedback.classList.remove('visible');
+    void feedback.offsetWidth;
+    feedback.classList.add('visible');
+
+    clearTimeout(playerShortcutFeedbackTimeout);
+    playerShortcutFeedbackTimeout = window.setTimeout(() => {
+        feedback.classList.remove('visible');
+    }, 900);
+}
+
+async function setPlayerVolume(nextVolume) {
+    const volume = document.getElementById('player-volume');
+    const resolvedVolume = clampNumber(Math.round(nextVolume), 0, 100);
+    volume.value = resolvedVolume;
+    document.getElementById('player-volume-label').textContent = `${resolvedVolume}%`;
+    renderMuteIcon(resolvedVolume);
+    setPendingPlayerOverride('volume', resolvedVolume);
+    if (resolvedVolume > 0) {
+        playerPreMuteVolume = resolvedVolume;
+    }
+    await invoke('player_set_volume', { volume: resolvedVolume });
+}
+
+async function togglePlayerMute() {
+    const currentVolume = getCurrentPlayerVolume();
+    const nextVolume = currentVolume > 0 ? 0 : (playerPreMuteVolume || 100);
+    await setPlayerVolume(nextVolume);
+    return nextVolume;
+}
+
+async function togglePlayerSubtitles() {
+    const currentId = playerState.active_subtitle_id;
+    const tracks = playerState.subtitle_tracks || [];
+    const nextId = currentId == null && tracks.length > 0 ? tracks[0].id : null;
+    setPendingPlayerOverride('active_subtitle_id', nextId);
+    await invoke('player_set_subtitle_track', { trackId: nextId });
+    document.getElementById('player-cc-toggle')?.classList.toggle('active', nextId != null);
+    return nextId == null ? 'Subtitles Off' : `Subtitles: ${tracks.find(track => track.id === nextId)?.title || 'On'}`;
+}
+
+async function togglePlayerPause() {
+    const nextPaused = !Boolean(playerState.paused);
+    setPendingPlayerOverride('paused', nextPaused);
+    await invoke('player_toggle_pause');
+    return nextPaused;
+}
+
+async function togglePlayerFullscreen() {
+    const nextFullscreen = !Boolean(playerState.fullscreen);
+    setPendingPlayerOverride('fullscreen', nextFullscreen);
+    await invoke('player_toggle_fullscreen');
+    document.getElementById('player-fullscreen').classList.toggle('active', nextFullscreen);
+    document.body.classList.toggle('is-fullscreen', nextFullscreen);
+    scheduleInlinePlayerSurfaceSyncBurst();
+    return nextFullscreen;
+}
+
+async function setPlayerSpeed(speed) {
+    const resolvedSpeed = clampNumber(speed, PLAYER_SPEED_STEPS[0], PLAYER_SPEED_STEPS[PLAYER_SPEED_STEPS.length - 1]);
+    await invoke('player_set_speed', { speed: resolvedSpeed });
+    playerState.speed = resolvedSpeed;
+    return setPlayerSpeedLabel(resolvedSpeed);
+}
+
+async function stepPlayerSpeed(direction) {
+    const currentSpeed = Number(playerState.speed) || 1;
+    let index = PLAYER_SPEED_STEPS.findIndex(step => Math.abs(step - currentSpeed) < 0.01);
+    if (index === -1) {
+        index = PLAYER_SPEED_STEPS.reduce((closestIndex, step, stepIndex, all) => {
+            const closestDistance = Math.abs(all[closestIndex] - currentSpeed);
+            return Math.abs(step - currentSpeed) < closestDistance ? stepIndex : closestIndex;
+        }, 0);
+    }
+    const nextIndex = clampNumber(index + direction, 0, PLAYER_SPEED_STEPS.length - 1);
+    const nextSpeed = PLAYER_SPEED_STEPS[nextIndex];
+    const label = await setPlayerSpeed(nextSpeed);
+    return `Speed ${label}`;
 }
 
 async function syncInlinePlayerSurface() {
@@ -272,6 +521,7 @@ function scheduleInlinePlayerSurfaceSyncBurst() {
 
 function renderInlinePlayer(snapshot) {
     Object.assign(playerState, snapshot || {});
+    applyPendingPlayerOverrides(snapshot);
 
     const hasVideo = Boolean(playerState.video_id);
     if (!hasVideo) {
@@ -295,23 +545,16 @@ function renderInlinePlayer(snapshot) {
         }
     }
 
-    console.log('[player] State update:', {
-        loaded: playerState.is_loaded,
-        paused: playerState.paused,
-        position: playerState.position_secs?.toFixed(1),
-        duration: playerState.duration_secs?.toFixed(1),
-    });
-
     inlinePlayerPending = false;
     showInlinePlayerShell(
         playerState.title || 'Now playing',
         playerState.video_path || 'Bundled mpv with subtitle and track controls'
     );
 
-    document.getElementById('player-time-current').textContent = formatDuration(playerState.position_secs);
-    document.getElementById('player-time-total').textContent = formatDuration(playerState.duration_secs);
+    renderPlayerTimeDisplay(playerState.position_secs, playerState.duration_secs);
     document.getElementById('player-volume-label').textContent = `${Math.round(playerState.volume ?? 100)}%`;
     document.getElementById('player-status').textContent = playerState.is_loaded ? 'Playing in Cinematic' : 'Loading video...';
+    setPlayerSpeedLabel(playerState.speed || 1);
 
     const progress = document.getElementById('player-progress');
     progress.max = playerState.duration_secs || 0;
@@ -383,6 +626,26 @@ function setupInlinePlayer() {
                 overlay.classList.add('idle');
             }
         });
+        overlay.addEventListener('wheel', (event) => {
+            if (!isInlinePlayerVisible()) return;
+            if (event.ctrlKey || event.metaKey) return;
+            if (event.target.closest('.player-settings-menu')) return;
+            if (event.target.closest('input, select')) return;
+
+            const direction = Math.sign(event.deltaY);
+            if (!direction) return;
+
+            event.preventDefault();
+            resetIdleTimer();
+
+            const nextVolume = clampNumber(getCurrentPlayerVolume() + (direction < 0 ? 5 : -5), 0, 100);
+            showPlayerShortcutFeedback(nextVolume > 0 ? (direction < 0 ? 'volume-up' : 'volume-down') : 'mute', 'player-mute-toggle', {
+                volume: nextVolume,
+            });
+            setPlayerVolume(nextVolume).catch(error => {
+                showToast(`Failed to set volume: ${error}`, 'error');
+            });
+        }, { passive: false });
     }
 
     // Back button — close the player and return to the library
@@ -391,24 +654,12 @@ function setupInlinePlayer() {
     });
 
     playToggle.addEventListener('click', () => {
-        invoke('player_toggle_pause').catch(error => showToast(`Failed to toggle playback: ${error}`, 'error'));
+        togglePlayerPause().catch(error => showToast(`Failed to toggle playback: ${error}`, 'error'));
     });
 
     // Mute toggle
     document.getElementById('player-mute-toggle').addEventListener('click', () => {
-        const volume = document.getElementById('player-volume');
-        const currentVol = Math.round(Number(volume.value) || 0);
-        let newVol;
-        if (currentVol > 0) {
-            playerPreMuteVolume = currentVol;
-            newVol = 0;
-        } else {
-            newVol = playerPreMuteVolume || 100;
-        }
-        volume.value = newVol;
-        document.getElementById('player-volume-label').textContent = `${newVol}%`;
-        renderMuteIcon(newVol);
-        invoke('player_set_volume', { volume: newVol }).catch(error => {
+        togglePlayerMute().catch(error => {
             showToast(`Failed to set volume: ${error}`, 'error');
         });
     });
@@ -427,10 +678,21 @@ function setupInlinePlayer() {
     });
     progress.addEventListener('input', () => {
         const val = Number(progress.value) || 0;
-        document.getElementById('player-time-current').textContent = formatDuration(val);
+        renderPlayerTimeDisplay(val, Number(progress.max) || 0);
         const max = Number(progress.max) || 1;
         const pct = Math.min(100, Math.max(0, (val / max) * 100));
         progress.style.setProperty('--progress', `${pct}%`);
+    });
+
+    const timeDisplay = document.getElementById('player-time-display');
+    timeDisplay?.addEventListener('click', () => {
+        togglePlayerTimeDisplayMode();
+    });
+    timeDisplay?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            togglePlayerTimeDisplayMode();
+        }
     });
 
     const volume = document.getElementById('player-volume');
@@ -440,7 +702,7 @@ function setupInlinePlayer() {
         renderMuteIcon(val);
     });
     volume.addEventListener('change', () => {
-        invoke('player_set_volume', { volume: Number(volume.value) || 0 }).catch(error => {
+        setPlayerVolume(Number(volume.value) || 0).catch(error => {
             showToast(`Failed to set volume: ${error}`, 'error');
         });
     });
@@ -453,16 +715,7 @@ function setupInlinePlayer() {
     });
 
     document.getElementById('player-cc-toggle')?.addEventListener('click', () => {
-        const currentId = playerState.active_subtitle_id;
-        const tracks = playerState.subtitle_tracks || [];
-        
-        let nextId = null; // Default to turning off
-        if (currentId == null && tracks.length > 0) {
-            // If off, turn on the first available track
-            nextId = tracks[0].id;
-        }
-
-        invoke('player_set_subtitle_track', { trackId: nextId }).catch(error => {
+        togglePlayerSubtitles().catch(error => {
             showToast(`Failed to toggle subtitles: ${error}`, 'error');
         });
     });
@@ -475,8 +728,7 @@ function setupInlinePlayer() {
     });
 
     document.getElementById('player-fullscreen').addEventListener('click', () => {
-        invoke('player_toggle_fullscreen').catch(error => showToast(`Failed to toggle fullscreen: ${error}`, 'error'));
-        scheduleInlinePlayerSurfaceSyncBurst();
+        togglePlayerFullscreen().catch(error => showToast(`Failed to toggle fullscreen: ${error}`, 'error'));
     });
 
 
@@ -521,9 +773,8 @@ function setupInlinePlayer() {
 
         document.getElementById('settings-nav-speed').addEventListener('click', (e) => {
             e.stopPropagation();
-            const speeds = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
             const currentSpeed = playerState.speed || 1.0;
-            const html = speeds.map(s => {
+            const html = PLAYER_SPEED_STEPS.map(s => {
                 const label = s === 1.0 ? 'Normal' : `${s}x`;
                 const isActive = Math.abs(currentSpeed - s) < 0.01;
                 return `<button class="settings-sub-option ${isActive ? 'active' : ''}" data-speed="${s}">
@@ -537,9 +788,7 @@ function setupInlinePlayer() {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const s = Number(btn.dataset.speed);
-                    invoke('player_set_speed', { speed: s }).catch(err => console.error(`Failed: ${err}`));
-                    document.getElementById('settings-val-speed').textContent = s === 1.0 ? 'Normal' : `${s}x`;
-                    playerState.speed = s;
+                    setPlayerSpeed(s).catch(err => console.error(`Failed: ${err}`));
                     playerSettingsMenu.classList.remove('active');
                 });
             });
@@ -1162,44 +1411,115 @@ function setupEventListeners() {
 
     // Keyboard
     document.addEventListener('keydown', (e) => {
-        const activeTag = document.activeElement?.tagName;
-        const isEditable = document.activeElement?.isContentEditable
-            || activeTag === 'INPUT'
-            || activeTag === 'TEXTAREA'
-            || activeTag === 'SELECT';
+        const isEditable = isEditableElement();
 
         if (isInlinePlayerVisible()) {
             if (e.key === 'Escape') {
                 e.preventDefault();
+                showPlayerShortcutFeedback('back', 'player-back');
                 invoke('close_internal_player').catch(error => {
                     showToast(`Failed to close player: ${error}`, 'error');
                 });
                 return;
             }
 
-            if (!isEditable) {
+            if (!isEditable && !e.ctrlKey && !e.metaKey && !e.altKey) {
                 if (e.code === 'Space') {
                     e.preventDefault();
-                    invoke('player_toggle_pause').catch(() => {});
+                    const nextPaused = !playerState.paused;
+                    showPlayerShortcutFeedback(nextPaused ? 'pause' : 'play', 'player-play-toggle');
+                    togglePlayerPause().catch(() => {});
+                    return;
+                }
+
+                if (e.key.toLowerCase() === 'k') {
+                    e.preventDefault();
+                    const nextPaused = !playerState.paused;
+                    showPlayerShortcutFeedback(nextPaused ? 'pause' : 'play', 'player-play-toggle');
+                    togglePlayerPause().catch(() => {});
                     return;
                 }
 
                 if (e.key === 'ArrowLeft') {
                     e.preventDefault();
+                    showPlayerShortcutFeedback('seek-back', 'player-play-toggle');
                     invoke('player_seek_relative', { seconds: -5 }).catch(() => {});
                     return;
                 }
 
                 if (e.key === 'ArrowRight') {
                     e.preventDefault();
+                    showPlayerShortcutFeedback('seek-forward', 'player-play-toggle');
                     invoke('player_seek_relative', { seconds: 5 }).catch(() => {});
+                    return;
+                }
+
+                if (e.key.toLowerCase() === 'j') {
+                    e.preventDefault();
+                    showPlayerShortcutFeedback('seek-back', 'player-play-toggle');
+                    invoke('player_seek_relative', { seconds: -10 }).catch(() => {});
+                    return;
+                }
+
+                if (e.key.toLowerCase() === 'l') {
+                    e.preventDefault();
+                    showPlayerShortcutFeedback('seek-forward', 'player-play-toggle');
+                    invoke('player_seek_relative', { seconds: 10 }).catch(() => {});
+                    return;
+                }
+
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const nextVolume = clampNumber(getCurrentPlayerVolume() + 5, 0, 100);
+                    showPlayerShortcutFeedback('volume-up', 'player-mute-toggle', { volume: nextVolume });
+                    setPlayerVolume(nextVolume).catch(() => {});
+                    return;
+                }
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const nextVolume = clampNumber(getCurrentPlayerVolume() - 5, 0, 100);
+                    showPlayerShortcutFeedback(nextVolume > 0 ? 'volume-down' : 'mute', 'player-mute-toggle', { volume: nextVolume });
+                    setPlayerVolume(nextVolume).catch(() => {});
+                    return;
+                }
+
+                if (e.key.toLowerCase() === 'm') {
+                    e.preventDefault();
+                    const nextVolume = getCurrentPlayerVolume() > 0 ? 0 : (playerPreMuteVolume || 100);
+                    showPlayerShortcutFeedback(nextVolume > 0 ? 'volume-up' : 'mute', 'player-mute-toggle', { volume: nextVolume });
+                    togglePlayerMute().catch(() => {});
+                    return;
+                }
+
+                if (e.key.toLowerCase() === 'c') {
+                    e.preventDefault();
+                    const currentId = playerState.active_subtitle_id;
+                    showPlayerShortcutFeedback(currentId == null ? 'subtitles-on' : 'subtitles-off', 'player-cc-toggle');
+                    togglePlayerSubtitles().catch(() => {});
                     return;
                 }
 
                 if (e.key.toLowerCase() === 'f') {
                     e.preventDefault();
-                    invoke('player_toggle_fullscreen').catch(() => {});
-                    scheduleInlinePlayerSurfaceSyncBurst();
+                    showPlayerShortcutFeedback(playerState.fullscreen ? 'fullscreen-exit' : 'fullscreen-enter', 'player-fullscreen');
+                    togglePlayerFullscreen().catch(() => {});
+                    return;
+                }
+
+                if (e.key === ',' || e.key === '<') {
+                    e.preventDefault();
+                    stepPlayerSpeed(-1)
+                        .then(() => showPlayerShortcutFeedback('speed-down', 'player-settings'))
+                        .catch(() => {});
+                    return;
+                }
+
+                if (e.key === '.' || e.key === '>') {
+                    e.preventDefault();
+                    stepPlayerSpeed(1)
+                        .then(() => showPlayerShortcutFeedback('speed-up', 'player-settings'))
+                        .catch(() => {});
                     return;
                 }
             }
@@ -2125,9 +2445,9 @@ async function playVideo(video) {
             closeModal();
             showInlinePlayerShell(video.title, video.path);
             try {
-                await appWindow.setFullscreen(true);
+                await appWindow.maximize();
             } catch (error) {
-                console.error("Failed to auto-fullscreen:", error);
+                console.error("Failed to maximize player window:", error);
             }
             scheduleInlinePlayerSurfaceSyncBurst();
         }

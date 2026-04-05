@@ -1016,6 +1016,106 @@ body.is-playing .inline-player-stage-frame {
     height: 100vh;
 }
 
+.player-shortcut-feedback {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 18;
+    width: 88px;
+    height: 88px;
+    border-radius: 999px;
+    background: rgba(8, 10, 16, 0.58);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.36);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.82);
+    transition: opacity 180ms var(--ease-smooth), transform 220ms var(--ease-out-expo);
+}
+
+.player-shortcut-feedback.visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.player-shortcut-feedback.volume-mode {
+    left: auto;
+    right: 32px;
+    width: 72px;
+    height: 196px;
+    border-radius: 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    padding: 18px 0;
+    transform: translateY(-50%) scale(0.82);
+}
+
+.player-shortcut-feedback.volume-mode.visible {
+    transform: translateY(-50%) scale(1);
+}
+
+.player-shortcut-feedback-icon {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.player-shortcut-feedback-icon svg {
+    width: 36px;
+    height: 36px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.85;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.player-shortcut-feedback-detail {
+    display: none;
+}
+
+.player-shortcut-feedback.volume-mode .player-shortcut-feedback-detail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.player-shortcut-volume-bar {
+    width: 6px;
+    height: 104px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+}
+
+.player-shortcut-volume-fill {
+    width: 100%;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255, 117, 96, 0.95), rgba(255, 78, 69, 0.95));
+    box-shadow: 0 0 14px rgba(255, 78, 69, 0.34);
+}
+
+.player-shortcut-volume-value {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255, 255, 255, 0.94);
+}
+
 .player-dock {
     position: absolute;
     bottom: 0;
@@ -1104,6 +1204,29 @@ body.is-playing .inline-player-stage-frame {
     border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    cursor: pointer;
+    user-select: none;
+    transition: transform 120ms var(--ease-smooth), background 120ms var(--ease-smooth), border-color 120ms var(--ease-smooth), color 120ms var(--ease-smooth);
+}
+
+.player-time-display:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.13);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.player-time-display:active {
+    transform: scale(0.97);
+}
+
+.player-time-display:focus-visible {
+    outline: none;
+    border-color: rgba(255, 123, 116, 0.4);
+    box-shadow: 0 0 0 3px rgba(255, 78, 69, 0.14);
+}
+
+.player-time-display.showing-remaining .player-time#player-time-current {
+    color: rgba(255, 244, 241, 0.96);
 }
 
 .player-time-sep {
@@ -1265,6 +1388,29 @@ body.is-playing .inline-player-stage-frame {
     background: rgba(255, 78, 69, 0.16);
     border-color: rgba(255, 123, 116, 0.24);
     color: #fff4f1;
+}
+
+.player-icon-btn.shortcut-pulse,
+.player-primary-btn.shortcut-pulse,
+.player-back-btn.shortcut-pulse {
+    animation: playerShortcutPulse 340ms var(--ease-out-expo);
+}
+
+@keyframes playerShortcutPulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(255, 120, 90, 0);
+    }
+
+    45% {
+        transform: scale(1.12);
+        box-shadow: 0 0 0 10px rgba(255, 120, 90, 0.14);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(255, 120, 90, 0);
+    }
 }
 
 /* Inline select wraps — no label, single row */
@@ -2988,11 +3134,11 @@ body.is-playing .inline-player-stage-frame {
 }
 
 /* Settings Menu CSS */
-.player-settings-menu { position: absolute; bottom: 60px; right: 16px; background: rgba(28, 28, 28, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); width: 260px; color: rgba(255, 255, 255, 0.95); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); overflow: hidden; z-index: 50; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s; }
+.player-settings-menu { position: absolute; bottom: 60px; right: 16px; background: rgba(28, 28, 28, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); width: 260px; max-height: min(420px, calc(100vh - 96px)); color: rgba(255, 255, 255, 0.95); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); overflow: hidden; z-index: 50; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s; }
 
 .player-settings-menu.active { opacity: 1; visibility: visible; transform: translateY(0); }
 
-.settings-menu-panel { display: flex; flex-direction: column; padding: 8px 0; }
+.settings-menu-panel { display: flex; flex-direction: column; min-height: 0; padding: 8px 0; }
 
 .settings-menu-row, .settings-sub-option { display: flex; align-items: center; width: 100%; padding: 10px 16px; background: transparent; border: none; color: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.1s; text-align: left; }
 
@@ -3014,7 +3160,7 @@ body.is-playing .inline-player-stage-frame {
 
 .settings-menu-title { font-size: 13px; font-weight: 600; }
 
-.settings-sub-options { max-height: 200px; overflow-y: auto; }
+.settings-menu-options, .settings-sub-options { flex: 1 1 auto; min-height: 0; max-height: min(320px, calc(100vh - 160px)); overflow-y: auto; }
 
 .settings-sub-option { padding: 10px 16px 10px 42px; position: relative; }
 
