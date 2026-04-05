@@ -991,40 +991,25 @@ pub fn refresh_paused_frame(manager: Arc<PlayerManager>) -> Result<(), String> {
     let Some(session) = manager.get() else {
         return Ok(());
     };
-    let (ipc_writer, host_hwnd, paused_position_secs) = {
+    let (ipc_writer, paused_position_secs) = {
         let shared = session.shared.lock().map_err(|e| e.to_string())?;
         if !shared.snapshot.is_loaded || !shared.snapshot.paused {
             return Ok(());
         }
 
-        (
-            shared.ipc_writer.clone(),
-            shared.host_hwnd,
-            shared.snapshot.position_secs.max(0.0),
-        )
+        (shared.ipc_writer.clone(), shared.snapshot.position_secs.max(0.0))
     };
 
-    // 1. Invalidate the host window and all children (including mpv's render
-    //    surface) so that DWM recomposes the popup after the Alt-Tab
-    //    transition.  The STATIC-class host window does not self-repair
-    //    because it has no meaningful WM_PAINT handler.
-    unsafe {
-        let hwnd = windows::Win32::Foundation::HWND(host_hwnd as _);
-        let _ = windows::Win32::Graphics::Gdi::InvalidateRect(Some(hwnd), None, true);
-        let _ = windows::Win32::Graphics::Gdi::RedrawWindow(
-            Some(hwnd),
-            None,
-            None,
-            windows::Win32::Graphics::Gdi::RDW_INVALIDATE
-                | windows::Win32::Graphics::Gdi::RDW_ALLCHILDREN
-                | windows::Win32::Graphics::Gdi::RDW_UPDATENOW,
-        );
-    }
-
-    // 2. Ask mpv to re-decode and redisplay the exact current frame.
-    //    Seeking to the current position with "exact" forces the video
-    //    output to refresh without changing the playback state at all —
-    //    no pause toggle, no frame drift.
+    // Ask mpv to re-decode and redisplay the exact current frame.
+    // Seeking to the current position with "exact" forces the video
+    // output to refresh without changing the playback state at all —
+    // no pause toggle, no frame drift.
+    //
+    // NOTE: Do NOT InvalidateRect / RedrawWindow the host window here.
+    // That erases the surface (painting the host's background) before
+    // mpv has a chance to redraw, producing a white flash on Win-Tab.
+    // layout_player_surfaces already calls SetWindowPos(SWP_SHOWWINDOW)
+    // which is sufficient for DWM visibility.
     let _ = write_ipc_command(
         &ipc_writer,
         json!({ "command": ["seek", paused_position_secs, "absolute", "exact"] }),
@@ -1043,20 +1028,27 @@ fn spawn_focus_watch_thread(
     std::thread::spawn(move || {
         let mut had_focus =
             unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow().0 as isize == main_hwnd };
+        let mut refresh_pending = false;
+        let mut last_refresh = Instant::now();
+        const REFRESH_COOLDOWN: Duration = Duration::from_millis(300);
 
         while !session.terminated.load(Ordering::SeqCst) {
             let has_focus =
                 unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow().0 as isize == main_hwnd };
 
+            // Record any focus-regain transition.
             if has_focus && !had_focus {
-                // Relayout first to ensure geometry is correct.
+                refresh_pending = true;
+            }
+
+            // Only perform the actual refresh when the cooldown has elapsed.
+            // This prevents rapid Alt-Tab from flooding mpv's IPC pipe with
+            // seek commands, which overwhelms the player and can crash it.
+            if has_focus && refresh_pending && last_refresh.elapsed() >= REFRESH_COOLDOWN {
                 let _ = layout_player_surfaces(&app, &manager);
-
-                // Small delay to let DWM finish the window transition
-                // before we force the redraw + seek.
-                std::thread::sleep(Duration::from_millis(30));
-
                 let _ = refresh_paused_frame(manager.clone());
+                last_refresh = Instant::now();
+                refresh_pending = false;
             }
 
             had_focus = has_focus;
