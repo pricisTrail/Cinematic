@@ -226,15 +226,15 @@ body.is-playing .ambient-bg {
     display: none;
 }
 
-body.is-playing.is-fullscreen .custom-titlebar {
+body.is-playing .custom-titlebar {
     display: none;
 }
 
-body.is-playing.is-fullscreen #app {
+body.is-playing #app {
     padding-top: 0;
 }
 
-body.is-playing.is-fullscreen .inline-player-overlay {
+body.is-playing .inline-player-overlay {
     inset: 0;
 }
 
@@ -1003,8 +1003,18 @@ select {
 
 .inline-player-stage-frame {
     flex: 1;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
     background: transparent;
     pointer-events: none;
+}
+
+body.is-playing .inline-player-stage,
+body.is-playing .inline-player-stage-frame {
+    width: 100vw;
+    height: 100vh;
 }
 
 .player-dock {

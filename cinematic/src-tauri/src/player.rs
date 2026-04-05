@@ -14,8 +14,6 @@ const PLAYER_STATE_EVENT: &str = "player://state";
 const PLAYBACK_SYNC_EVENT: &str = "cinematic://playback-updated";
 const MAIN_WINDOW_LABEL: &str = "main";
 #[cfg(target_os = "windows")]
-const MAIN_TITLEBAR_HEIGHT: u32 = 36;
-#[cfg(target_os = "windows")]
 const PLAYER_SURFACE_PADDING: u32 = 0;
 const PLAYER_DOCK_HEIGHT: u32 = 72;
 const MIN_RESUME_SECS: f64 = 5.0;
@@ -286,7 +284,7 @@ fn cleanup_session(
 fn default_surface_bounds(window: &tauri::WebviewWindow) -> Result<PlayerSurfaceBounds, String> {
     let inner_size = window.inner_size().map_err(|e| e.to_string())?;
     let left = PLAYER_SURFACE_PADDING as i32;
-    let top = (MAIN_TITLEBAR_HEIGHT + PLAYER_SURFACE_PADDING) as i32;
+    let top = PLAYER_SURFACE_PADDING as i32;
     let width = inner_size
         .width
         .saturating_sub(PLAYER_SURFACE_PADDING * 2)
@@ -294,7 +292,7 @@ fn default_surface_bounds(window: &tauri::WebviewWindow) -> Result<PlayerSurface
     let reserved_bottom = PLAYER_DOCK_HEIGHT + PLAYER_SURFACE_PADDING * 2;
     let height = inner_size
         .height
-        .saturating_sub(MAIN_TITLEBAR_HEIGHT + reserved_bottom)
+        .saturating_sub(reserved_bottom)
         .max(1) as i32;
 
     Ok(PlayerSurfaceBounds {
@@ -314,6 +312,30 @@ fn resolve_surface_bounds(
         Some(bounds) if bounds.width > 0 && bounds.height > 0 => Ok(bounds),
         _ => default_surface_bounds(window),
     }
+}
+
+#[cfg(target_os = "windows")]
+fn surface_bounds_to_screen(
+    window: &tauri::WebviewWindow,
+    bounds: PlayerSurfaceBounds,
+) -> Result<PlayerSurfaceBounds, String> {
+    let hwnd = window.hwnd().map_err(|e| e.to_string())?;
+    let mut origin = windows::Win32::Foundation::POINT {
+        x: bounds.left,
+        y: bounds.top,
+    };
+
+    unsafe {
+        if !windows::Win32::Graphics::Gdi::ClientToScreen(hwnd, &mut origin).as_bool() {
+            return Err(windows::core::Error::from_win32().to_string());
+        }
+    }
+
+    Ok(PlayerSurfaceBounds {
+        left: origin.x,
+        top: origin.y,
+        ..bounds
+    })
 }
 
 #[cfg(target_os = "windows")]
@@ -343,14 +365,15 @@ fn layout_player_surfaces(app: &AppHandle, manager: &Arc<PlayerManager>) -> Resu
     let Some(session) = manager.get() else {
         return Ok(());
     };
-    let bounds = resolve_surface_bounds(&window, manager)?;
+    let parent_hwnd = window.hwnd().map_err(|e| e.to_string())?;
+    let bounds = surface_bounds_to_screen(&window, resolve_surface_bounds(&window, manager)?)?;
 
     {
         let shared = session.shared.lock().map_err(|e| e.to_string())?;
         unsafe {
             let _ = windows::Win32::UI::WindowsAndMessaging::SetWindowPos(
                 windows::Win32::Foundation::HWND(shared.host_hwnd as _),
-                Some(windows::Win32::UI::WindowsAndMessaging::HWND_BOTTOM),
+                Some(parent_hwnd),
                 bounds.left,
                 bounds.top,
                 bounds.width.max(1),
@@ -491,7 +514,7 @@ fn build_mpv_command(
         .arg("--no-terminal")
         .arg("--audio-display=no")
         .arg("--background=color")
-        .arg("--background-color=#FF000000")
+        .arg("--background-color=#000000")
         .arg(format!("--log-file={}", log_file.display()))
         .arg(format!("--input-ipc-server={pipe_name}"))
         .arg(format!("--wid={host_hwnd}"))
@@ -512,16 +535,19 @@ fn create_player_host_window(
         .get_webview_window(MAIN_WINDOW_LABEL)
         .ok_or_else(|| "The main Cinematic window is not available.".to_string())?;
     let parent_hwnd = window.hwnd().map_err(|e| e.to_string())?;
-    let bounds = resolve_surface_bounds(&window, manager)?;
+    let bounds = surface_bounds_to_screen(&window, resolve_surface_bounds(&window, manager)?)?;
 
-    // Create as a child window placed behind the transparent webview.
+    // Keep the video surface in its own top-level popup behind the transparent
+    // Tauri window. WebView2 can reveal windows behind it, but it won't reliably
+    // expose embedded child content inside the same window tree.
     let hwnd = unsafe {
         windows::Win32::UI::WindowsAndMessaging::CreateWindowExW(
-            windows::Win32::UI::WindowsAndMessaging::WS_EX_NOACTIVATE,
+            windows::Win32::UI::WindowsAndMessaging::WS_EX_NOACTIVATE
+                | windows::Win32::UI::WindowsAndMessaging::WS_EX_TOOLWINDOW,
             windows::core::w!("STATIC"),
             windows::core::w!(""),
             windows::Win32::UI::WindowsAndMessaging::WINDOW_STYLE(
-                windows::Win32::UI::WindowsAndMessaging::WS_CHILD.0
+                windows::Win32::UI::WindowsAndMessaging::WS_POPUP.0
                     | windows::Win32::UI::WindowsAndMessaging::WS_VISIBLE.0
                     | windows::Win32::UI::WindowsAndMessaging::WS_CLIPCHILDREN.0
                     | windows::Win32::UI::WindowsAndMessaging::WS_CLIPSIBLINGS.0
@@ -531,13 +557,26 @@ fn create_player_host_window(
             bounds.top,
             bounds.width.max(1),
             bounds.height.max(1),
-            Some(parent_hwnd),
+            None,
             None,
             None,
             None,
         )
         .map_err(|e| e.to_string())?
     };
+
+    unsafe {
+        let _ = windows::Win32::UI::WindowsAndMessaging::SetWindowPos(
+            hwnd,
+            Some(parent_hwnd),
+            bounds.left,
+            bounds.top,
+            bounds.width.max(1),
+            bounds.height.max(1),
+            windows::Win32::UI::WindowsAndMessaging::SWP_SHOWWINDOW
+                | windows::Win32::UI::WindowsAndMessaging::SWP_NOACTIVATE,
+        );
+    }
 
     Ok(hwnd)
 }

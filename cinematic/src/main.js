@@ -402,6 +402,20 @@ function setupInlinePlayer() {
         scheduleInlinePlayerSurfaceSyncBurst();
     });
 
+    if (appWindow?.onResized) {
+        appWindow.onResized(() => {
+            scheduleInlinePlayerSurfaceSyncBurst();
+        }).catch(() => {});
+    }
+
+    if (appWindow?.onMoved) {
+        appWindow.onMoved(() => {
+            if (isInlinePlayerVisible()) {
+                scheduleInlinePlayerSurfaceSyncBurst();
+            }
+        }).catch(() => {});
+    }
+
     const surface = document.getElementById('inline-player-surface');
     if (window.ResizeObserver && surface) {
         playerSurfaceObserver = new ResizeObserver(() => {
