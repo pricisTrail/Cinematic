@@ -34,6 +34,8 @@ let inlinePlayerPending = false;
 let playerSurfaceSyncFrame = null;
 let playerSurfaceObserver = null;
 let playerIdleTimeout = null;
+let playerPreMuteVolume = 100;
+let playerLastVideoId = null;
 
 function getPreferredTheme() {
     const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
@@ -161,6 +163,32 @@ function renderInlinePlayerPlayIcon(paused) {
         : `<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg>`;
 }
 
+function renderMuteIcon(vol) {
+    const btn = document.getElementById('player-mute-toggle');
+    if (!btn) return;
+    if (vol <= 0) {
+        // Muted icon with X
+        btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <line x1="23" y1="9" x2="17" y2="15"/>
+            <line x1="17" y1="9" x2="23" y2="15"/>
+        </svg>`;
+    } else if (vol < 50) {
+        // Low volume — single wave
+        btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M15.5 8.5a5 5 0 010 7"/>
+        </svg>`;
+    } else {
+        // Normal volume — two waves
+        btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M15.5 8.5a5 5 0 010 7"/>
+            <path d="M18.5 5.5a9 9 0 010 13"/>
+        </svg>`;
+    }
+}
+
 function showInlinePlayerShell(title = 'Opening player...', path = 'Bundled mpv with subtitle and track controls') {
     setInlinePlayerVisibility(true);
     document.body.classList.add('is-playing');
@@ -250,7 +278,21 @@ function renderInlinePlayer(snapshot) {
         if (!inlinePlayerPending) {
             hideInlinePlayerShell();
         }
+        playerLastVideoId = null;
         return;
+    }
+
+    // Clear stale track data when a different video is loaded.
+    // This prevents subtitles/audio tracks from a previous video
+    // from appearing in the dropdown before the new tracks arrive.
+    if (playerState.video_id !== playerLastVideoId) {
+        playerLastVideoId = playerState.video_id;
+        if (!playerState.is_loaded) {
+            playerState.subtitle_tracks = [];
+            playerState.audio_tracks = [];
+            playerState.active_subtitle_id = null;
+            playerState.active_audio_id = null;
+        }
     }
 
     console.log('[player] State update:', {
@@ -275,6 +317,10 @@ function renderInlinePlayer(snapshot) {
     progress.max = playerState.duration_secs || 0;
     if (!isPlayerScrubbing) {
         progress.value = playerState.position_secs || 0;
+        const max = Number(progress.max) || 1;
+        const val = Number(progress.value) || 0;
+        const pct = Math.min(100, Math.max(0, (val / max) * 100));
+        progress.style.setProperty('--progress', `${pct}%`);
     }
 
     const volume = document.getElementById('player-volume');
@@ -296,7 +342,9 @@ function renderInlinePlayer(snapshot) {
     );
 
     renderInlinePlayerPlayIcon(Boolean(playerState.paused));
+    renderMuteIcon(Math.round(playerState.volume ?? 100));
     document.getElementById('player-fullscreen').classList.toggle('active', Boolean(playerState.fullscreen));
+    document.getElementById('player-cc-toggle')?.classList.toggle('active', playerState.active_subtitle_id != null);
     document.body.classList.toggle('is-fullscreen', Boolean(playerState.fullscreen));
     scheduleInlinePlayerSurfaceSync();
 }
@@ -337,16 +385,32 @@ function setupInlinePlayer() {
         });
     }
 
+    // Back button — close the player and return to the library
+    document.getElementById('player-back').addEventListener('click', () => {
+        invoke('close_internal_player').catch(error => showToast(`Failed to close player: ${error}`, 'error'));
+    });
+
     playToggle.addEventListener('click', () => {
         invoke('player_toggle_pause').catch(error => showToast(`Failed to toggle playback: ${error}`, 'error'));
     });
 
-    document.getElementById('player-seek-back').addEventListener('click', () => {
-        invoke('player_seek_relative', { seconds: -10 }).catch(error => showToast(`Failed to seek: ${error}`, 'error'));
-    });
-
-    document.getElementById('player-seek-forward').addEventListener('click', () => {
-        invoke('player_seek_relative', { seconds: 10 }).catch(error => showToast(`Failed to seek: ${error}`, 'error'));
+    // Mute toggle
+    document.getElementById('player-mute-toggle').addEventListener('click', () => {
+        const volume = document.getElementById('player-volume');
+        const currentVol = Math.round(Number(volume.value) || 0);
+        let newVol;
+        if (currentVol > 0) {
+            playerPreMuteVolume = currentVol;
+            newVol = 0;
+        } else {
+            newVol = playerPreMuteVolume || 100;
+        }
+        volume.value = newVol;
+        document.getElementById('player-volume-label').textContent = `${newVol}%`;
+        renderMuteIcon(newVol);
+        invoke('player_set_volume', { volume: newVol }).catch(error => {
+            showToast(`Failed to set volume: ${error}`, 'error');
+        });
     });
 
     const progress = document.getElementById('player-progress');
@@ -362,12 +426,18 @@ function setupInlinePlayer() {
         await invoke('player_seek_to', { seconds: Number(progress.value) || 0 });
     });
     progress.addEventListener('input', () => {
-        document.getElementById('player-time-current').textContent = formatDuration(Number(progress.value) || 0);
+        const val = Number(progress.value) || 0;
+        document.getElementById('player-time-current').textContent = formatDuration(val);
+        const max = Number(progress.max) || 1;
+        const pct = Math.min(100, Math.max(0, (val / max) * 100));
+        progress.style.setProperty('--progress', `${pct}%`);
     });
 
     const volume = document.getElementById('player-volume');
     volume.addEventListener('input', () => {
-        document.getElementById('player-volume-label').textContent = `${Math.round(Number(volume.value) || 0)}%`;
+        const val = Math.round(Number(volume.value) || 0);
+        document.getElementById('player-volume-label').textContent = `${val}%`;
+        renderMuteIcon(val);
     });
     volume.addEventListener('change', () => {
         invoke('player_set_volume', { volume: Number(volume.value) || 0 }).catch(error => {
@@ -382,6 +452,21 @@ function setupInlinePlayer() {
         }).catch(error => showToast(`Failed to switch subtitles: ${error}`, 'error'));
     });
 
+    document.getElementById('player-cc-toggle')?.addEventListener('click', () => {
+        const currentId = playerState.active_subtitle_id;
+        const tracks = playerState.subtitle_tracks || [];
+        
+        let nextId = null; // Default to turning off
+        if (currentId == null && tracks.length > 0) {
+            // If off, turn on the first available track
+            nextId = tracks[0].id;
+        }
+
+        invoke('player_set_subtitle_track', { trackId: nextId }).catch(error => {
+            showToast(`Failed to toggle subtitles: ${error}`, 'error');
+        });
+    });
+
     document.getElementById('player-audio').addEventListener('change', event => {
         const value = event.target.value;
         invoke('player_set_audio_track', {
@@ -394,9 +479,130 @@ function setupInlinePlayer() {
         scheduleInlinePlayerSurfaceSyncBurst();
     });
 
-    document.getElementById('player-close').addEventListener('click', () => {
-        invoke('close_internal_player').catch(error => showToast(`Failed to close player: ${error}`, 'error'));
-    });
+
+    // === SETTINGS MENU LOGIC ===
+    const playerSettingsBtn = document.getElementById('player-settings');
+    const playerSettingsMenu = document.getElementById('player-settings-menu');
+    const settingsMainPanel = document.getElementById('settings-main-panel');
+    const settingsSubPanel = document.getElementById('settings-sub-panel');
+    const settingsSubTitle = document.getElementById('settings-sub-title');
+    const settingsSubOptions = document.getElementById('settings-sub-options');
+    const settingsSubBack = document.getElementById('settings-sub-back');
+
+    if (playerSettingsBtn && playerSettingsMenu) {
+        playerSettingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isActive = playerSettingsMenu.classList.toggle('active');
+            if (isActive) {
+                settingsMainPanel.style.display = 'flex';
+                settingsSubPanel.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (playerSettingsMenu.classList.contains('active') && !playerSettingsMenu.contains(e.target) && !playerSettingsBtn.contains(e.target)) {
+                playerSettingsMenu.classList.remove('active');
+            }
+        });
+
+        function openSubPanel(title, html) {
+            settingsMainPanel.style.display = 'none';
+            settingsSubPanel.style.display = 'flex';
+            settingsSubTitle.textContent = title;
+            settingsSubOptions.innerHTML = html;
+            settingsSubOptions.scrollTop = 0;
+        }
+
+        settingsSubBack.addEventListener('click', (e) => {
+            e.stopPropagation();
+            settingsSubPanel.style.display = 'none';
+            settingsMainPanel.style.display = 'flex';
+        });
+
+        document.getElementById('settings-nav-speed').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const speeds = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+            const currentSpeed = playerState.speed || 1.0;
+            const html = speeds.map(s => {
+                const label = s === 1.0 ? 'Normal' : `${s}x`;
+                const isActive = Math.abs(currentSpeed - s) < 0.01;
+                return `<button class="settings-sub-option ${isActive ? 'active' : ''}" data-speed="${s}">
+                    <div class="settings-sub-check"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                    ${label}
+                </button>`;
+            }).join('');
+            openSubPanel('Playback speed', html);
+            
+            settingsSubOptions.querySelectorAll('.settings-sub-option').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const s = Number(btn.dataset.speed);
+                    invoke('player_set_speed', { speed: s }).catch(err => console.error(`Failed: ${err}`));
+                    document.getElementById('settings-val-speed').textContent = s === 1.0 ? 'Normal' : `${s}x`;
+                    playerState.speed = s;
+                    playerSettingsMenu.classList.remove('active');
+                });
+            });
+        });
+
+        document.getElementById('settings-nav-subtitles').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const currentId = playerState.active_subtitle_id;
+            const tracks = playerState.subtitle_tracks || [];
+            
+            let html = `<button class="settings-sub-option ${currentId == null ? 'active' : ''}" data-id="none">
+                <div class="settings-sub-check"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                Off
+            </button>`;
+
+            html += tracks.map(t => {
+                const isActive = currentId === t.id;
+                return `<button class="settings-sub-option ${isActive ? 'active' : ''}" data-id="${t.id}">
+                    <div class="settings-sub-check"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                    ${t.title || t.language || `Track ${t.id}`}
+                </button>`;
+            }).join('');
+            openSubPanel('Subtitles/CC', html);
+
+            settingsSubOptions.querySelectorAll('.settings-sub-option').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.id === 'none' ? null : Number(btn.dataset.id);
+                    invoke('player_set_subtitle_track', { trackId: id }).catch(err => console.error(`Failed: ${err}`));
+                    const trackTitle = btn.dataset.id === 'none' ? 'Off' : btn.textContent.trim();
+                    document.getElementById('settings-val-subtitles').textContent = trackTitle;
+                    playerState.active_subtitle_id = id;
+                    playerSettingsMenu.classList.remove('active');
+                });
+            });
+        });
+
+        document.getElementById('settings-nav-audio').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const currentId = playerState.active_audio_id;
+            const tracks = playerState.audio_tracks || [];
+            
+            const html = tracks.map(t => {
+                const isActive = currentId === t.id;
+                return `<button class="settings-sub-option ${isActive ? 'active' : ''}" data-id="${t.id}">
+                    <div class="settings-sub-check"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                    ${t.title || t.language || `Track ${t.id}`}
+                </button>`;
+            }).join('');
+            openSubPanel('Audio track', html || '<div style="padding:10px 16px; opacity:0.6; font-size:12px;">No alternative audio tracks</div>');
+
+            settingsSubOptions.querySelectorAll('.settings-sub-option').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = Number(btn.dataset.id);
+                    invoke('player_set_audio_track', { trackId: id }).catch(err => console.error(`Failed: ${err}`));
+                    document.getElementById('settings-val-audio').textContent = btn.textContent.trim();
+                    playerState.active_audio_id = id;
+                    playerSettingsMenu.classList.remove('active');
+                });
+            });
+        });
+    }
 
     window.addEventListener('resize', () => {
         scheduleInlinePlayerSurfaceSyncBurst();

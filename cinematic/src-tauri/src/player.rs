@@ -100,6 +100,10 @@ struct PlayerSurfaceBounds {
 struct PlayerSession {
     shared: Mutex<PlayerShared>,
     terminated: AtomicBool,
+    /// Join handle for the dedicated host-window message-pump thread.
+    /// Taken during cleanup to join the thread after posting WM_CLOSE.
+    #[cfg(target_os = "windows")]
+    host_thread: Mutex<Option<std::thread::JoinHandle<()>>>,
 }
 
 struct PlayerShared {
@@ -261,8 +265,9 @@ fn cleanup_session(
         if let Ok(mut child) = shared.child.lock() {
             let _ = child.kill();
         }
-        // Popup windows can only be destroyed by their creator thread.
-        // Use PostMessage(WM_CLOSE) which is safe from any thread.
+        // Post WM_CLOSE to the host window.  Our WndProc handles
+        // WM_DESTROY → PostQuitMessage, which terminates the dedicated
+        // message-pump thread.
         unsafe {
             let _ = windows::Win32::UI::WindowsAndMessaging::PostMessageW(
                 Some(windows::Win32::Foundation::HWND(shared.host_hwnd as _)),
@@ -270,6 +275,13 @@ fn cleanup_session(
                 windows::Win32::Foundation::WPARAM(0),
                 windows::Win32::Foundation::LPARAM(0),
             );
+        }
+    }
+
+    // Join the host-window thread so it terminates cleanly.
+    if let Ok(mut guard) = session.host_thread.lock() {
+        if let Some(handle) = guard.take() {
+            let _ = handle.join();
         }
     }
 
@@ -527,58 +539,185 @@ fn build_mpv_command(
     Ok(command)
 }
 
+/// Custom WndProc for the video host window (VLC-inspired).
+///
+/// Unlike the `STATIC` class, this proc:
+/// - Suppresses `WM_ERASEBKGND` so the surface is never wiped to white/black.
+/// - Handles `WM_PAINT` by only validating the dirty region; the actual video
+///   pixels are presented by mpv's child window via its own D3D11 swapchain.
+/// - On `WM_DESTROY`, posts `WM_QUIT` so the dedicated message-pump thread
+///   exits cleanly.
+#[cfg(target_os = "windows")]
+unsafe extern "system" fn video_host_wndproc(
+    hwnd: windows::Win32::Foundation::HWND,
+    msg: u32,
+    wparam: windows::Win32::Foundation::WPARAM,
+    lparam: windows::Win32::Foundation::LPARAM,
+) -> windows::Win32::Foundation::LRESULT {
+    match msg {
+        // Suppress background erase — prevents the white flash that the
+        // default handler would paint before mpv can re-present its frame.
+        windows::Win32::UI::WindowsAndMessaging::WM_ERASEBKGND => {
+            windows::Win32::Foundation::LRESULT(1)
+        }
+        // Validate the dirty region without drawing anything.  mpv's child
+        // window handles its own painting via the D3D11 swapchain.
+        windows::Win32::UI::WindowsAndMessaging::WM_PAINT => {
+            let mut ps = windows::Win32::Graphics::Gdi::PAINTSTRUCT::default();
+            let _ = windows::Win32::Graphics::Gdi::BeginPaint(hwnd, &mut ps);
+            let _ = windows::Win32::Graphics::Gdi::EndPaint(hwnd, &ps);
+            windows::Win32::Foundation::LRESULT(0)
+        }
+        // Clean exit: WM_CLOSE → DestroyWindow → WM_DESTROY → PostQuitMessage
+        // so the dedicated message-pump thread can terminate.
+        windows::Win32::UI::WindowsAndMessaging::WM_DESTROY => {
+            windows::Win32::UI::WindowsAndMessaging::PostQuitMessage(0);
+            windows::Win32::Foundation::LRESULT(0)
+        }
+        _ => windows::Win32::UI::WindowsAndMessaging::DefWindowProcW(hwnd, msg, wparam, lparam),
+    }
+}
+
+/// Register the `CinematicVideoHost` window class on the current thread.
+/// Safe to call multiple times — duplicate registration is silently ignored.
+#[cfg(target_os = "windows")]
+fn register_video_host_class() -> Result<(), String> {
+    let wc = windows::Win32::UI::WindowsAndMessaging::WNDCLASSEXW {
+        cbSize: std::mem::size_of::<windows::Win32::UI::WindowsAndMessaging::WNDCLASSEXW>() as u32,
+        style: windows::Win32::UI::WindowsAndMessaging::CS_HREDRAW
+            | windows::Win32::UI::WindowsAndMessaging::CS_VREDRAW,
+        lpfnWndProc: Some(video_host_wndproc),
+        lpszClassName: windows::core::w!("CinematicVideoHost"),
+        ..Default::default()
+    };
+
+    let atom = unsafe { windows::Win32::UI::WindowsAndMessaging::RegisterClassExW(&wc) };
+    if atom == 0 {
+        // If the class already exists from a previous session, that's fine.
+        let err = unsafe { windows::Win32::Foundation::GetLastError() };
+        if err.0 != 1410 {
+            // 1410 = ERROR_CLASS_ALREADY_EXISTS
+            return Err(format!("Failed to register video host class: {err:?}"));
+        }
+    }
+    Ok(())
+}
+
+/// Create the player host window on a **dedicated thread with its own Win32
+/// message pump** (the VLC pattern).
+///
+/// The host window is created on a new thread that runs a standard
+/// `GetMessageW` / `DispatchMessageW` loop.  This guarantees that `WM_PAINT`
+/// and other messages are always dispatched — even after Win-Tab cloaks and
+/// restores the window — which is the root cause of the paused-frame blank
+/// screen.  The previous approach created the window on a Tauri/tokio thread
+/// that had no message pump, so `WM_PAINT` was never processed.
+///
+/// Returns `(host_hwnd_raw, join_handle)`.  The join handle must be kept alive
+/// until session cleanup, which posts `WM_CLOSE` to terminate the pump.
+#[cfg(target_os = "windows")]
 fn create_player_host_window(
     app: &AppHandle,
     manager: &Arc<PlayerManager>,
-) -> Result<windows::Win32::Foundation::HWND, String> {
+) -> Result<(isize, std::thread::JoinHandle<()>), String> {
     let window = app
         .get_webview_window(MAIN_WINDOW_LABEL)
         .ok_or_else(|| "The main Cinematic window is not available.".to_string())?;
-    let parent_hwnd = window.hwnd().map_err(|e| e.to_string())?;
+    let parent_hwnd_raw = window.hwnd().map_err(|e| e.to_string())?.0 as isize;
     let bounds = surface_bounds_to_screen(&window, resolve_surface_bounds(&window, manager)?)?;
 
-    // Keep the video surface in its own top-level popup behind the transparent
-    // Tauri window. WebView2 can reveal windows behind it, but it won't reliably
-    // expose embedded child content inside the same window tree.
-    let hwnd = unsafe {
-        windows::Win32::UI::WindowsAndMessaging::CreateWindowExW(
-            windows::Win32::UI::WindowsAndMessaging::WS_EX_NOACTIVATE
-                | windows::Win32::UI::WindowsAndMessaging::WS_EX_TOOLWINDOW,
-            windows::core::w!("STATIC"),
-            windows::core::w!(""),
-            windows::Win32::UI::WindowsAndMessaging::WINDOW_STYLE(
-                windows::Win32::UI::WindowsAndMessaging::WS_POPUP.0
-                    | windows::Win32::UI::WindowsAndMessaging::WS_VISIBLE.0
-                    | windows::Win32::UI::WindowsAndMessaging::WS_CLIPCHILDREN.0
-                    | windows::Win32::UI::WindowsAndMessaging::WS_CLIPSIBLINGS.0
-                    | windows::Win32::System::SystemServices::SS_BLACKRECT.0,
-            ),
-            bounds.left,
-            bounds.top,
-            bounds.width.max(1),
-            bounds.height.max(1),
-            None,
-            None,
-            None,
-            None,
-        )
-        .map_err(|e| e.to_string())?
-    };
+    let (tx, rx) = std::sync::mpsc::channel::<Result<isize, String>>();
 
-    unsafe {
-        let _ = windows::Win32::UI::WindowsAndMessaging::SetWindowPos(
-            hwnd,
-            Some(parent_hwnd),
-            bounds.left,
-            bounds.top,
-            bounds.width.max(1),
-            bounds.height.max(1),
-            windows::Win32::UI::WindowsAndMessaging::SWP_SHOWWINDOW
-                | windows::Win32::UI::WindowsAndMessaging::SWP_NOACTIVATE,
-        );
-    }
+    let handle = std::thread::Builder::new()
+        .name("cinematic-video-host".into())
+        .spawn(move || {
+            // --- everything below runs on the dedicated host thread ---
+            if let Err(e) = register_video_host_class() {
+                let _ = tx.send(Err(e));
+                return;
+            }
 
-    Ok(hwnd)
+            let hwnd = unsafe {
+                windows::Win32::UI::WindowsAndMessaging::CreateWindowExW(
+                    windows::Win32::UI::WindowsAndMessaging::WS_EX_NOACTIVATE
+                        | windows::Win32::UI::WindowsAndMessaging::WS_EX_TOOLWINDOW,
+                    windows::core::w!("CinematicVideoHost"),
+                    windows::core::w!(""),
+                    windows::Win32::UI::WindowsAndMessaging::WINDOW_STYLE(
+                        windows::Win32::UI::WindowsAndMessaging::WS_POPUP.0
+                            | windows::Win32::UI::WindowsAndMessaging::WS_VISIBLE.0
+                            | windows::Win32::UI::WindowsAndMessaging::WS_CLIPCHILDREN.0
+                            | windows::Win32::UI::WindowsAndMessaging::WS_CLIPSIBLINGS.0,
+                    ),
+                    bounds.left,
+                    bounds.top,
+                    bounds.width.max(1),
+                    bounds.height.max(1),
+                    // No owner — cross-thread owner assignment in
+                    // CreateWindowExW silently fails on Windows.
+                    // Z-ordering is handled by SetWindowPos below,
+                    // which IS cross-thread safe.
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+            };
+
+            let hwnd = match hwnd {
+                Ok(h) => h,
+                Err(e) => {
+                    let _ = tx.send(Err(e.to_string()));
+                    return;
+                }
+            };
+
+            // Position behind the Tauri window and show.
+            unsafe {
+                let _ = windows::Win32::UI::WindowsAndMessaging::SetWindowPos(
+                    hwnd,
+                    Some(windows::Win32::Foundation::HWND(parent_hwnd_raw as _)),
+                    bounds.left,
+                    bounds.top,
+                    bounds.width.max(1),
+                    bounds.height.max(1),
+                    windows::Win32::UI::WindowsAndMessaging::SWP_SHOWWINDOW
+                        | windows::Win32::UI::WindowsAndMessaging::SWP_NOACTIVATE,
+                );
+            }
+
+            // Send the HWND back to the caller.
+            let _ = tx.send(Ok(hwnd.0 as isize));
+
+            // ── VLC-style message pump ──────────────────────────────────
+            // This loop keeps running until WM_QUIT is received (posted by
+            // our WM_DESTROY handler when cleanup_session sends WM_CLOSE).
+            // It ensures WM_PAINT and all other queued messages reach both
+            // our video_host_wndproc AND mpv's child window.
+            unsafe {
+                let mut msg = windows::Win32::UI::WindowsAndMessaging::MSG::default();
+                while windows::Win32::UI::WindowsAndMessaging::GetMessageW(
+                    &mut msg,
+                    None,
+                    0,
+                    0,
+                )
+                .as_bool()
+                {
+                    let _ =
+                        windows::Win32::UI::WindowsAndMessaging::TranslateMessage(&msg);
+                    windows::Win32::UI::WindowsAndMessaging::DispatchMessageW(&msg);
+                }
+            }
+        })
+        .map_err(|e| format!("Failed to spawn video host thread: {e}"))?;
+
+    let hwnd_raw = rx
+        .recv()
+        .map_err(|_| "Video host thread exited before sending HWND".to_string())?
+        .map_err(|e| format!("Video host window creation failed: {e}"))?;
+
+    Ok((hwnd_raw, handle))
 }
 
 #[cfg(target_os = "windows")]
@@ -764,24 +903,33 @@ fn create_session(
         .map_err(|e| e.to_string())?
         .0 as isize;
 
-    let host_hwnd = create_player_host_window(app, &manager)?;
+    let (host_hwnd_raw, host_thread) = create_player_host_window(app, &manager)?;
+
+    // Helper: tear down the host window on error by posting WM_CLOSE to
+    // the dedicated message-pump thread (DestroyWindow must be called
+    // from the thread that created the window).
+    let close_host = |host_hwnd_raw: isize| unsafe {
+        let _ = windows::Win32::UI::WindowsAndMessaging::PostMessageW(
+            Some(windows::Win32::Foundation::HWND(host_hwnd_raw as _)),
+            windows::Win32::UI::WindowsAndMessaging::WM_CLOSE,
+            windows::Win32::Foundation::WPARAM(0),
+            windows::Win32::Foundation::LPARAM(0),
+        );
+    };
+
     let pipe_name = format!(r"\\.\pipe\cinematic-mpv-{}", uuid::Uuid::new_v4());
-    let mut command = match build_mpv_command(app, host_hwnd.0 as isize, &pipe_name, video_path, resume_secs)
+    let mut command = match build_mpv_command(app, host_hwnd_raw, &pipe_name, video_path, resume_secs)
     {
         Ok(command) => command,
         Err(err) => {
-            unsafe {
-                let _ = windows::Win32::UI::WindowsAndMessaging::DestroyWindow(host_hwnd);
-            }
+            close_host(host_hwnd_raw);
             return Err(err);
         }
     };
     let mut child = match command.spawn().map_err(|e| e.to_string()) {
         Ok(child) => child,
         Err(err) => {
-            unsafe {
-                let _ = windows::Win32::UI::WindowsAndMessaging::DestroyWindow(host_hwnd);
-            }
+            close_host(host_hwnd_raw);
             return Err(err);
         }
     };
@@ -789,9 +937,7 @@ fn create_session(
         Ok(files) => files,
         Err(err) => {
             let _ = child.kill();
-            unsafe {
-                let _ = windows::Win32::UI::WindowsAndMessaging::DestroyWindow(host_hwnd);
-            }
+            close_host(host_hwnd_raw);
             return Err(err);
         }
     };
@@ -810,7 +956,7 @@ fn create_session(
 
     let session = Arc::new(PlayerSession {
         shared: Mutex::new(PlayerShared {
-            host_hwnd: host_hwnd.0 as isize,
+            host_hwnd: host_hwnd_raw,
             ipc_writer: ipc_writer.clone(),
             child: child.clone(),
             snapshot: PlayerStateSnapshot {
@@ -824,6 +970,7 @@ fn create_session(
             pending_resume_secs: None,
         }),
         terminated: AtomicBool::new(false),
+        host_thread: Mutex::new(Some(host_thread)),
     });
 
     manager.set(session.clone());
@@ -1025,20 +1172,56 @@ fn spawn_focus_watch_thread(
     session: Arc<PlayerSession>,
     main_hwnd: isize,
 ) {
+    // Read the host_hwnd once — it does not change during the session.
+    let host_hwnd = session
+        .shared
+        .lock()
+        .ok()
+        .map(|s| s.host_hwnd)
+        .unwrap_or(0);
+
     std::thread::spawn(move || {
-        let mut had_focus =
-            unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow().0 as isize == main_hwnd };
+        let mut had_focus = unsafe {
+            windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow().0 as isize
+                == main_hwnd
+        };
+        let mut host_was_visible = host_hwnd != 0 && unsafe {
+            windows::Win32::UI::WindowsAndMessaging::IsWindowVisible(
+                windows::Win32::Foundation::HWND(host_hwnd as _),
+            )
+            .as_bool()
+        };
         let mut refresh_pending = false;
         let mut last_refresh = Instant::now();
         const REFRESH_COOLDOWN: Duration = Duration::from_millis(300);
 
         while !session.terminated.load(Ordering::SeqCst) {
-            let has_focus =
-                unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow().0 as isize == main_hwnd };
+            let has_focus = unsafe {
+                windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow().0 as isize
+                    == main_hwnd
+            };
 
-            // Record any focus-regain transition.
+            // Primary trigger: foreground-window transition (Alt-Tab).
             if has_focus && !had_focus {
                 refresh_pending = true;
+            }
+
+            // Secondary trigger: host window visibility restored.
+            // During Win-Tab, the owned popup is auto-hidden when the
+            // owner (Tauri window) is cloaked by DWM.  When the owner
+            // is restored the popup becomes visible again.  This
+            // catches Win-Tab even if GetForegroundWindow never changes.
+            if host_hwnd != 0 {
+                let host_is_visible = unsafe {
+                    windows::Win32::UI::WindowsAndMessaging::IsWindowVisible(
+                        windows::Win32::Foundation::HWND(host_hwnd as _),
+                    )
+                    .as_bool()
+                };
+                if host_is_visible && !host_was_visible {
+                    refresh_pending = true;
+                }
+                host_was_visible = host_is_visible;
             }
 
             // Only perform the actual refresh when the cooldown has elapsed.
@@ -1078,6 +1261,18 @@ pub fn seek_to(manager: Arc<PlayerManager>, seconds: f64) -> Result<(), String> 
     write_ipc_command(
         &shared.ipc_writer,
         json!({ "command": ["seek", seconds.max(0.0), "absolute", "exact"] }),
+    )
+}
+
+#[cfg(target_os = "windows")]
+pub fn set_speed(manager: Arc<PlayerManager>, speed: f64) -> Result<(), String> {
+    let Some(session) = manager.get() else {
+        return Err("The internal player is not open.".to_string());
+    };
+    let shared = session.shared.lock().map_err(|e| e.to_string())?;
+    write_ipc_command(
+        &shared.ipc_writer,
+        json!({ "command": ["set_property", "speed", speed.max(0.1)] }),
     )
 }
 
@@ -1203,6 +1398,11 @@ pub fn seek_to(_manager: Arc<PlayerManager>, _seconds: f64) -> Result<(), String
 }
 
 #[cfg(not(target_os = "windows"))]
+pub fn set_speed(_manager: Arc<PlayerManager>, _speed: f64) -> Result<(), String> {
+    Err("The internal player is only available on Windows right now.".to_string())
+}
+
+#[cfg(not(target_os = "windows"))]
 pub fn set_volume(_manager: Arc<PlayerManager>, _volume: f64) -> Result<(), String> {
     Err("The internal player is only available on Windows right now.".to_string())
 }
@@ -1229,3 +1429,5 @@ pub fn toggle_fullscreen(_app: AppHandle, _manager: Arc<PlayerManager>) -> Resul
 pub fn close(_app: AppHandle, _manager: Arc<PlayerManager>) -> Result<(), String> {
     Ok(())
 }
+
+

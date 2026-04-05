@@ -41,6 +41,18 @@ pub fn run() {
 
             Ok(())
         })
+        .on_window_event(|window, event| match event {
+            tauri::WindowEvent::Focused(focused) => {
+                if *focused {
+                    if let Ok(is_fullscreen) = window.is_fullscreen() {
+                        if is_fullscreen {
+                            let _ = window.set_decorations(false);
+                        }
+                    }
+                }
+            }
+            _ => {}
+        })
         .invoke_handler(tauri::generate_handler![
             // Library
             commands::add_library,
@@ -72,6 +84,7 @@ pub fn run() {
             commands::player_set_volume,
             commands::player_set_subtitle_track,
             commands::player_set_audio_track,
+            commands::player_set_speed,
             commands::player_toggle_fullscreen,
             commands::close_internal_player,
             commands::open_external_player,
