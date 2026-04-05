@@ -1,13 +1,14 @@
+use crate::database::Database;
+use crate::models::*;
+use crate::player;
+use crate::scanner;
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
-use tauri::State;
-use crate::database::Database;
-use crate::scanner;
-use crate::models::*;
+use tauri::{AppHandle, State};
 
 const PLAYBACK_POLL_INTERVAL: Duration = Duration::from_secs(2);
 const HTTP_READY_TIMEOUT: Duration = Duration::from_secs(6);
@@ -40,6 +41,7 @@ pub struct AppState {
     pub(crate) thumbnails_dir: String,
     pub(crate) collection_covers_dir: String,
     pub(crate) playback_sessions: Arc<Mutex<HashMap<String, ManagedPlaybackSession>>>,
+    pub(crate) player_manager: Arc<player::PlayerManager>,
 }
 
 fn resume_position_for(video_resume_secs: Option<f64>) -> f64 {
@@ -55,8 +57,8 @@ fn should_mark_watched(time_secs: f64, length_secs: Option<f64>) -> bool {
         return false;
     }
 
-    let completion_threshold = (length_secs - WATCHED_COMPLETION_GRACE_SECS)
-        .max(length_secs * WATCHED_COMPLETION_RATIO);
+    let completion_threshold =
+        (length_secs - WATCHED_COMPLETION_GRACE_SECS).max(length_secs * WATCHED_COMPLETION_RATIO);
 
     time_secs >= completion_threshold
 }
@@ -86,8 +88,14 @@ fn find_vlc_path() -> Option<String> {
     }
 
     let registry_locations = [
-        (r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\vlc.exe", None),
-        (r"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\vlc.exe", None),
+        (
+            r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\vlc.exe",
+            None,
+        ),
+        (
+            r"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\vlc.exe",
+            None,
+        ),
         (r"HKLM\SOFTWARE\VideoLAN\VLC", None),
         (r"HKLM\SOFTWARE\VideoLAN\VLC", Some("InstallDir")),
     ];
@@ -95,7 +103,10 @@ fn find_vlc_path() -> Option<String> {
     for (key, value_name) in registry_locations {
         if let Some(path) = query_registry_value(key, value_name) {
             let candidate = if value_name == Some("InstallDir") {
-                std::path::Path::new(&path).join("vlc.exe").to_string_lossy().to_string()
+                std::path::Path::new(&path)
+                    .join("vlc.exe")
+                    .to_string_lossy()
+                    .to_string()
             } else {
                 path
             };
@@ -171,7 +182,9 @@ fn query_vlc_status(port: u16, password: &str) -> Result<VlcStatus, String> {
 
     let address = format!("127.0.0.1:{port}");
     let mut stream = TcpStream::connect_timeout(
-        &address.parse().map_err(|e: std::net::AddrParseError| e.to_string())?,
+        &address
+            .parse()
+            .map_err(|e: std::net::AddrParseError| e.to_string())?,
         HTTP_CONNECT_TIMEOUT,
     )
     .map_err(|e| e.to_string())?;
@@ -365,7 +378,11 @@ fn spawn_playback_monitor(
 // ─── Library Commands ───
 
 #[tauri::command]
-pub fn add_library(state: State<'_, AppState>, path: String, name: String) -> Result<Library, String> {
+pub fn add_library(
+    state: State<'_, AppState>,
+    path: String,
+    name: String,
+) -> Result<Library, String> {
     // Validate path exists
     if !std::path::Path::new(&path).is_dir() {
         return Err("Directory does not exist".to_string());
@@ -391,22 +408,37 @@ pub fn get_all_videos(state: State<'_, AppState>) -> Result<Vec<VideoRecord>, St
 }
 
 #[tauri::command]
-pub fn get_videos_by_library(state: State<'_, AppState>, library_id: String) -> Result<Vec<VideoRecord>, String> {
+pub fn get_videos_by_library(
+    state: State<'_, AppState>,
+    library_id: String,
+) -> Result<Vec<VideoRecord>, String> {
     state.db.get_videos_by_library(&library_id)
 }
 
 #[tauri::command]
-pub fn set_video_watched(state: State<'_, AppState>, video_id: String, watched: bool) -> Result<(), String> {
+pub fn set_video_watched(
+    state: State<'_, AppState>,
+    video_id: String,
+    watched: bool,
+) -> Result<(), String> {
     state.db.set_watched(&video_id, watched)
 }
 
 #[tauri::command]
-pub fn set_video_progress(state: State<'_, AppState>, video_id: String, progress_secs: f64) -> Result<(), String> {
+pub fn set_video_progress(
+    state: State<'_, AppState>,
+    video_id: String,
+    progress_secs: f64,
+) -> Result<(), String> {
     state.db.set_progress(&video_id, progress_secs)
 }
 
 #[tauri::command]
-pub fn set_video_favorite(state: State<'_, AppState>, video_id: String, favorite: bool) -> Result<(), String> {
+pub fn set_video_favorite(
+    state: State<'_, AppState>,
+    video_id: String,
+    favorite: bool,
+) -> Result<(), String> {
     state.db.set_favorite(&video_id, favorite)
 }
 
@@ -415,8 +447,17 @@ pub fn delete_video_file(state: State<'_, AppState>, video_id: String) -> Result
     {
         let sessions = state.playback_sessions.lock().map_err(|e| e.to_string())?;
         if sessions.contains_key(&video_id) {
-            return Err("Cannot delete a video while it is playing in a managed VLC session.".to_string());
+            return Err(
+                "Cannot delete a video while it is playing in a managed VLC session.".to_string(),
+            );
         }
+    }
+
+    if state.player_manager.current_video_id().as_deref() == Some(video_id.as_str()) {
+        return Err(
+            "Cannot delete a video while it is playing in the internal Cinematic player."
+                .to_string(),
+        );
     }
 
     let video = state
@@ -451,14 +492,19 @@ pub fn get_library_stats(state: State<'_, AppState>) -> Result<LibraryStats, Str
 // ─── Scan Commands ───
 
 #[tauri::command]
-pub fn scan_library(state: State<'_, AppState>, library_id: String, library_path: String) -> Result<Vec<VideoRecord>, String> {
+pub fn scan_library(
+    state: State<'_, AppState>,
+    library_id: String,
+    library_path: String,
+) -> Result<Vec<VideoRecord>, String> {
     // Phase 1: Scan for video files
     let video_paths = scanner::scan_directory(&library_path);
-    
+
     // Phase 2: Get existing paths so we can skip already-indexed files
     let existing_paths = state.db.get_existing_paths(&library_id)?;
-    let existing_set: std::collections::HashSet<&str> = existing_paths.iter().map(|s| s.as_str()).collect();
-    
+    let existing_set: std::collections::HashSet<&str> =
+        existing_paths.iter().map(|s| s.as_str()).collect();
+
     // Phase 3: Create and insert new video records
     let mut new_count = 0;
     for path in &video_paths {
@@ -472,8 +518,10 @@ pub fn scan_library(state: State<'_, AppState>, library_id: String, library_path
 
     // Phase 4: Remove videos that no longer exist on disk
     let valid_paths: Vec<String> = video_paths.clone();
-    let removed = state.db.remove_videos_not_in_paths(&library_id, &valid_paths)?;
-    
+    let removed = state
+        .db
+        .remove_videos_not_in_paths(&library_id, &valid_paths)?;
+
     if new_count > 0 || removed > 0 {
         // Return updated list
         state.db.get_videos_by_library(&library_id)
@@ -488,8 +536,9 @@ pub fn scan_all_libraries(state: State<'_, AppState>) -> Result<Vec<VideoRecord>
     for lib in &libraries {
         let video_paths = scanner::scan_directory(&lib.path);
         let existing_paths = state.db.get_existing_paths(&lib.id)?;
-        let existing_set: std::collections::HashSet<&str> = existing_paths.iter().map(|s| s.as_str()).collect();
-        
+        let existing_set: std::collections::HashSet<&str> =
+            existing_paths.iter().map(|s| s.as_str()).collect();
+
         for path in &video_paths {
             if !existing_set.contains(path.as_str()) {
                 if let Some(record) = scanner::create_video_record(path, &lib.id) {
@@ -497,7 +546,7 @@ pub fn scan_all_libraries(state: State<'_, AppState>) -> Result<Vec<VideoRecord>
                 }
             }
         }
-        
+
         state.db.remove_videos_not_in_paths(&lib.id, &video_paths)?;
     }
     state.db.get_all_videos()
@@ -538,7 +587,8 @@ fn sync_thumbnail_for_video(
 
     if let Some(stream_index) = embedded_artwork_stream_index {
         if prefer_embedded_artwork || !thumb_path.exists() {
-            if scanner::extract_embedded_artwork(video_path, &thumb_path_str, stream_index).is_ok() {
+            if scanner::extract_embedded_artwork(video_path, &thumb_path_str, stream_index).is_ok()
+            {
                 state.db.update_thumbnail(video_id, &thumb_path_str)?;
                 return Ok(true);
             }
@@ -550,7 +600,13 @@ fn sync_thumbnail_for_video(
         return Ok(false);
     }
 
-    if scanner::generate_thumbnail(video_path, &thumb_path_str, thumbnail_timestamp(duration_secs)).is_ok() {
+    if scanner::generate_thumbnail(
+        video_path,
+        &thumb_path_str,
+        thumbnail_timestamp(duration_secs),
+    )
+    .is_ok()
+    {
         state.db.update_thumbnail(video_id, &thumb_path_str)?;
         return Ok(true);
     }
@@ -559,7 +615,10 @@ fn sync_thumbnail_for_video(
 }
 
 #[tauri::command]
-pub fn generate_thumbnails(state: State<'_, AppState>, max_count: Option<usize>) -> Result<usize, String> {
+pub fn generate_thumbnails(
+    state: State<'_, AppState>,
+    max_count: Option<usize>,
+) -> Result<usize, String> {
     let batch_size = max_count
         .unwrap_or(DEFAULT_THUMBNAIL_BATCH_SIZE)
         .clamp(1, MAX_THUMBNAIL_BATCH_SIZE);
@@ -570,7 +629,12 @@ pub fn generate_thumbnails(state: State<'_, AppState>, max_count: Option<usize>)
         let metadata = scanner::extract_metadata(&video.path);
 
         if video.duration_secs.is_none() || video.width.is_none() || video.height.is_none() {
-            state.db.update_video_metadata(&video.id, metadata.duration_secs, metadata.width, metadata.height)?;
+            state.db.update_video_metadata(
+                &video.id,
+                metadata.duration_secs,
+                metadata.width,
+                metadata.height,
+            )?;
         }
 
         let duration_secs = video.duration_secs.or(metadata.duration_secs);
@@ -591,9 +655,18 @@ pub fn generate_thumbnails(state: State<'_, AppState>, max_count: Option<usize>)
 }
 
 #[tauri::command]
-pub fn extract_video_metadata(state: State<'_, AppState>, video_id: String, video_path: String) -> Result<(), String> {
+pub fn extract_video_metadata(
+    state: State<'_, AppState>,
+    video_id: String,
+    video_path: String,
+) -> Result<(), String> {
     let metadata = scanner::extract_metadata(&video_path);
-    state.db.update_video_metadata(&video_id, metadata.duration_secs, metadata.width, metadata.height)?;
+    state.db.update_video_metadata(
+        &video_id,
+        metadata.duration_secs,
+        metadata.width,
+        metadata.height,
+    )?;
 
     sync_thumbnail_for_video(
         &state,
@@ -610,7 +683,95 @@ pub fn extract_video_metadata(state: State<'_, AppState>, video_id: String, vide
 // ─── Playback Commands ───
 
 #[tauri::command]
-pub fn open_in_player(
+pub fn open_internal_player(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    video_id: String,
+    video_path: String,
+    resume_secs: Option<f64>,
+) -> Result<PlaybackLaunchResult, String> {
+    player::open(
+        app,
+        state.db.clone(),
+        state.player_manager.clone(),
+        video_id,
+        video_path,
+        resume_position_for(resume_secs),
+    )
+}
+
+#[tauri::command]
+pub fn get_player_snapshot(state: State<'_, AppState>) -> Result<PlayerStateSnapshot, String> {
+    Ok(player::get_snapshot(state.player_manager.clone()))
+}
+
+#[tauri::command]
+pub fn player_set_surface_bounds(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    left: f64,
+    top: f64,
+    width: f64,
+    height: f64,
+) -> Result<(), String> {
+    player::set_surface_bounds(
+        app,
+        state.player_manager.clone(),
+        left,
+        top,
+        width,
+        height,
+    )
+}
+
+#[tauri::command]
+pub fn player_toggle_pause(state: State<'_, AppState>) -> Result<(), String> {
+    player::toggle_pause(state.player_manager.clone())
+}
+
+#[tauri::command]
+pub fn player_seek_relative(state: State<'_, AppState>, seconds: f64) -> Result<(), String> {
+    player::seek_relative(state.player_manager.clone(), seconds)
+}
+
+#[tauri::command]
+pub fn player_seek_to(state: State<'_, AppState>, seconds: f64) -> Result<(), String> {
+    player::seek_to(state.player_manager.clone(), seconds)
+}
+
+#[tauri::command]
+pub fn player_set_volume(state: State<'_, AppState>, volume: f64) -> Result<(), String> {
+    player::set_volume(state.player_manager.clone(), volume)
+}
+
+#[tauri::command]
+pub fn player_set_subtitle_track(
+    state: State<'_, AppState>,
+    track_id: Option<i64>,
+) -> Result<(), String> {
+    player::set_subtitle_track(state.player_manager.clone(), track_id)
+}
+
+#[tauri::command]
+pub fn player_set_audio_track(
+    state: State<'_, AppState>,
+    track_id: Option<i64>,
+) -> Result<(), String> {
+    player::set_audio_track(state.player_manager.clone(), track_id)
+}
+
+#[tauri::command]
+pub fn player_toggle_fullscreen(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    player::toggle_fullscreen(app, state.player_manager.clone())
+}
+
+#[tauri::command]
+pub fn close_internal_player(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    player::close(app, state.player_manager.clone())
+}
+
+#[tauri::command]
+pub fn open_external_player(
     state: State<'_, AppState>,
     video_id: String,
     video_path: String,
@@ -646,7 +807,9 @@ pub fn open_in_player(
                 resumed: false,
                 resume_position_secs: 0.0,
                 fallback_used: true,
-                message: "VLC was not found. Opened in the system player without progress tracking.".to_string(),
+                message:
+                    "VLC was not found. Opened in the system player without progress tracking."
+                        .to_string(),
             });
         };
 
@@ -664,7 +827,10 @@ pub fn open_in_player(
             .arg("--no-video-title-show");
 
         if resume_position_secs >= MIN_RESUME_SECS {
-            command.arg(format!("--start-time={}", resume_position_secs.floor() as i64));
+            command.arg(format!(
+                "--start-time={}",
+                resume_position_secs.floor() as i64
+            ));
         }
 
         command.arg(&video_path);
@@ -712,7 +878,8 @@ pub fn open_in_player(
                     "Opened in VLC with progress tracking enabled.".to_string()
                 }
             } else {
-                "Opened in VLC, but progress tracking could not be enabled for this session.".to_string()
+                "Opened in VLC, but progress tracking could not be enabled for this session."
+                    .to_string()
             },
         });
     }
@@ -732,6 +899,16 @@ pub fn open_in_player(
     }
 }
 
+#[tauri::command]
+pub fn open_in_player(
+    state: State<'_, AppState>,
+    video_id: String,
+    video_path: String,
+    resume_secs: Option<f64>,
+) -> Result<PlaybackLaunchResult, String> {
+    open_external_player(state, video_id, video_path, resume_secs)
+}
+
 // ─── Thumbnail serving ───
 
 #[tauri::command]
@@ -747,13 +924,21 @@ pub fn get_image_base64(image_path: String) -> Result<String, String> {
     use base64::Engine;
     let data = std::fs::read(&image_path).map_err(|e| e.to_string())?;
     let encoded = base64::engine::general_purpose::STANDARD.encode(&data);
-    Ok(format!("data:{};base64,{}", image_mime_type_for(&image_path), encoded))
+    Ok(format!(
+        "data:{};base64,{}",
+        image_mime_type_for(&image_path),
+        encoded
+    ))
 }
 
 // ─── Collection Commands ───
 
 #[tauri::command]
-pub fn create_collection(state: State<'_, AppState>, name: String, description: String) -> Result<Collection, String> {
+pub fn create_collection(
+    state: State<'_, AppState>,
+    name: String,
+    description: String,
+) -> Result<Collection, String> {
     state.db.create_collection(&name, &description)
 }
 
@@ -773,17 +958,27 @@ pub fn delete_collection(state: State<'_, AppState>, collection_id: String) -> R
 }
 
 #[tauri::command]
-pub fn set_collection_cover(state: State<'_, AppState>, collection_id: String, cover_video_id: Option<String>) -> Result<(), String> {
+pub fn set_collection_cover(
+    state: State<'_, AppState>,
+    collection_id: String,
+    cover_video_id: Option<String>,
+) -> Result<(), String> {
     if let Some(collection) = state.db.get_collection_by_id(&collection_id)? {
         if let Some(cover_image_path) = collection.cover_image_path {
             remove_file_if_exists(&cover_image_path);
         }
     }
-    state.db.set_collection_cover(&collection_id, cover_video_id.as_deref())
+    state
+        .db
+        .set_collection_cover(&collection_id, cover_video_id.as_deref())
 }
 
 #[tauri::command]
-pub fn set_collection_cover_image(state: State<'_, AppState>, collection_id: String, source_image_path: String) -> Result<(), String> {
+pub fn set_collection_cover_image(
+    state: State<'_, AppState>,
+    collection_id: String,
+    source_image_path: String,
+) -> Result<(), String> {
     let source_path = std::path::Path::new(&source_image_path);
     if !source_path.is_file() {
         return Err("Selected image file does not exist".to_string());
@@ -793,7 +988,12 @@ pub fn set_collection_cover_image(state: State<'_, AppState>, collection_id: Str
         .extension()
         .and_then(|ext| ext.to_str())
         .map(|ext| ext.to_ascii_lowercase())
-        .filter(|ext| matches!(ext.as_str(), "png" | "jpg" | "jpeg" | "webp" | "gif" | "bmp" | "svg"))
+        .filter(|ext| {
+            matches!(
+                ext.as_str(),
+                "png" | "jpg" | "jpeg" | "webp" | "gif" | "bmp" | "svg"
+            )
+        })
         .ok_or_else(|| "Unsupported image format".to_string())?;
 
     if let Some(collection) = state.db.get_collection_by_id(&collection_id)? {
@@ -802,23 +1002,39 @@ pub fn set_collection_cover_image(state: State<'_, AppState>, collection_id: Str
         }
     }
 
-    let dest_path = std::path::Path::new(&state.collection_covers_dir).join(format!("{collection_id}.{ext}"));
+    let dest_path =
+        std::path::Path::new(&state.collection_covers_dir).join(format!("{collection_id}.{ext}"));
     std::fs::copy(source_path, &dest_path).map_err(|e| e.to_string())?;
     let dest_path_str = dest_path.to_string_lossy().to_string();
-    state.db.set_collection_cover_image(&collection_id, Some(&dest_path_str))
+    state
+        .db
+        .set_collection_cover_image(&collection_id, Some(&dest_path_str))
 }
 
 #[tauri::command]
-pub fn add_video_to_collection(state: State<'_, AppState>, collection_id: String, video_id: String) -> Result<(), String> {
+pub fn add_video_to_collection(
+    state: State<'_, AppState>,
+    collection_id: String,
+    video_id: String,
+) -> Result<(), String> {
     state.db.add_video_to_collection(&collection_id, &video_id)
 }
 
 #[tauri::command]
-pub fn remove_video_from_collection(state: State<'_, AppState>, collection_id: String, video_id: String) -> Result<(), String> {
-    state.db.remove_video_from_collection(&collection_id, &video_id)
+pub fn remove_video_from_collection(
+    state: State<'_, AppState>,
+    collection_id: String,
+    video_id: String,
+) -> Result<(), String> {
+    state
+        .db
+        .remove_video_from_collection(&collection_id, &video_id)
 }
 
 #[tauri::command]
-pub fn get_collection_videos(state: State<'_, AppState>, collection_id: String) -> Result<Vec<VideoRecord>, String> {
+pub fn get_collection_videos(
+    state: State<'_, AppState>,
+    collection_id: String,
+) -> Result<Vec<VideoRecord>, String> {
     state.db.get_collection_videos(&collection_id)
 }

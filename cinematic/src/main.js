@@ -4,11 +4,36 @@
 
 const { invoke } = window.__TAURI__.core;
 const { getCurrentWindow } = window.__TAURI__.window;
+const tauriEvent = window.__TAURI__.event;
 const appWindow = getCurrentWindow();
 const THEME_STORAGE_KEY = 'cinematic-theme';
+const PLAYBACK_MODE_STORAGE_KEY = 'cinematic-playback-mode';
+const PLAYBACK_UPDATED_EVENT = 'cinematic://playback-updated';
+const PLAYER_STATE_EVENT = 'player://state';
 const BACKGROUND_METADATA_BATCH_SIZE = 1;
 const BACKGROUND_THUMBNAIL_BATCH_SIZE = 2;
 const BACKGROUND_ENRICH_DELAY_MS = 180;
+let playbackSyncTimeout = null;
+const playerState = {
+    duration_secs: 0,
+    position_secs: 0,
+    paused: false,
+    volume: 100,
+    fullscreen: false,
+    title: null,
+    video_id: null,
+    video_path: null,
+    subtitle_tracks: [],
+    audio_tracks: [],
+    active_subtitle_id: null,
+    active_audio_id: null,
+    is_loaded: false,
+};
+let isPlayerScrubbing = false;
+let inlinePlayerPending = false;
+let playerSurfaceSyncFrame = null;
+let playerSurfaceObserver = null;
+let playerIdleTimeout = null;
 
 function getPreferredTheme() {
     const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
@@ -44,6 +69,352 @@ function applyTheme(theme) {
 function setTheme(theme) {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
     applyTheme(theme);
+}
+
+function getPlaybackMode() {
+    return localStorage.getItem(PLAYBACK_MODE_STORAGE_KEY) === 'external'
+        ? 'external'
+        : 'internal';
+}
+
+function updatePlaybackModeControls() {
+    document.querySelectorAll('[data-playback-mode]').forEach(button => {
+        button.classList.toggle('active', button.dataset.playbackMode === getPlaybackMode());
+    });
+}
+
+function setPlaybackMode(mode) {
+    const resolvedMode = mode === 'external' ? 'external' : 'internal';
+    localStorage.setItem(PLAYBACK_MODE_STORAGE_KEY, resolvedMode);
+    updatePlaybackModeControls();
+
+    if (selectedVideo) {
+        updatePlayButton(selectedVideo);
+    }
+}
+
+function getPlaybackActionLabel(video) {
+    const resumeSecs = getResumeSeconds(video);
+    const isInternal = getPlaybackMode() === 'internal';
+    const targetLabel = isInternal ? 'Cinematic' : 'External Player';
+
+    return resumeSecs >= 5
+        ? `Resume in ${targetLabel} (${formatDuration(resumeSecs)})`
+        : `Play in ${targetLabel}`;
+}
+
+function schedulePlaybackSync() {
+    clearTimeout(playbackSyncTimeout);
+    playbackSyncTimeout = window.setTimeout(() => {
+        syncVideoState();
+    }, 250);
+}
+
+function getInlinePlayerOverlay() {
+    return document.getElementById('inline-player-overlay');
+}
+
+function isInlinePlayerVisible() {
+    return getInlinePlayerOverlay()?.classList.contains('active') === true;
+}
+
+function setInlinePlayerVisibility(visible) {
+    const overlay = getInlinePlayerOverlay();
+    if (!overlay) return;
+    overlay.classList.toggle('active', visible);
+    overlay.style.display = visible ? 'flex' : 'none';
+}
+
+function updatePlayerSelectOptions(select, tracks, activeId, allowNone, emptyLabel) {
+    const options = [];
+
+    if (allowNone) {
+        options.push('<option value="">Off</option>');
+    }
+
+    if (!tracks.length) {
+        select.innerHTML = `${options.join('')}<option value="" ${allowNone ? '' : 'selected'}>${emptyLabel}</option>`;
+        select.disabled = true;
+        return;
+    }
+
+    select.disabled = false;
+
+    for (const track of tracks) {
+        const labelParts = [];
+        if (track.title) labelParts.push(track.title);
+        if (track.lang) labelParts.push(track.lang.toUpperCase());
+        if (!track.title && !track.lang) labelParts.push(`${track.kind} ${track.id}`);
+        if (track.external) labelParts.push('External');
+        options.push(`<option value="${track.id}">${labelParts.join(' · ')}</option>`);
+    }
+
+    select.innerHTML = options.join('');
+    select.value = activeId == null ? '' : String(activeId);
+}
+
+function renderInlinePlayerPlayIcon(paused) {
+    const icon = document.getElementById('player-play-icon');
+    if (!icon) return;
+    icon.innerHTML = paused
+        ? `<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"/></svg>`
+        : `<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg>`;
+}
+
+function showInlinePlayerShell(title = 'Opening player...', path = 'Bundled mpv with subtitle and track controls') {
+    setInlinePlayerVisibility(true);
+    document.body.classList.add('is-playing');
+    document.getElementById('player-title').textContent = title;
+    document.getElementById('player-subtitle').textContent = path;
+    document.getElementById('player-status').textContent = inlinePlayerPending ? 'Preparing video...' : 'Loading video...';
+}
+
+function hideInlinePlayerShell() {
+    inlinePlayerPending = false;
+    if (playerSurfaceSyncFrame) {
+        window.cancelAnimationFrame(playerSurfaceSyncFrame);
+        playerSurfaceSyncFrame = null;
+    }
+    setInlinePlayerVisibility(false);
+    document.body.classList.remove('is-playing');
+    appWindow.setFullscreen(false).catch(error => console.error("Failed to exit auto-fullscreen:", error));
+    document.body.classList.remove('is-fullscreen');
+}
+
+async function syncInlinePlayerSurface() {
+    if (!isInlinePlayerVisible()) return;
+
+    const surface = document.getElementById('inline-player-surface');
+    if (!surface) return;
+
+    const rect = surface.getBoundingClientRect();
+    if (rect.width < 32 || rect.height < 32) {
+        console.warn('[player] Surface too small, skipping sync:', rect.width, 'x', rect.height);
+        return;
+    }
+
+    try {
+        await invoke('player_set_surface_bounds', {
+            left: rect.left,
+            top: rect.top,
+            width: rect.width,
+            height: rect.height,
+        });
+    } catch (err) {
+        console.error('[player] Failed to set surface bounds:', err);
+    }
+}
+
+function scheduleInlinePlayerSurfaceSync(delay = 0) {
+    if (!isInlinePlayerVisible()) return;
+
+    const run = () => {
+        if (playerSurfaceSyncFrame) {
+            window.cancelAnimationFrame(playerSurfaceSyncFrame);
+        }
+        playerSurfaceSyncFrame = window.requestAnimationFrame(() => {
+            syncInlinePlayerSurface().catch(error => {
+                console.error('Failed to sync inline player surface:', error);
+            });
+        });
+    };
+
+    if (delay > 0) {
+        window.setTimeout(() => {
+            if (isInlinePlayerVisible()) {
+                run();
+            }
+        }, delay);
+        return;
+    }
+
+    if (playerSurfaceSyncFrame) {
+        window.cancelAnimationFrame(playerSurfaceSyncFrame);
+        playerSurfaceSyncFrame = null;
+    }
+
+    run();
+}
+
+function scheduleInlinePlayerSurfaceSyncBurst() {
+    scheduleInlinePlayerSurfaceSync();
+    scheduleInlinePlayerSurfaceSync(60);
+    scheduleInlinePlayerSurfaceSync(180);
+}
+
+function renderInlinePlayer(snapshot) {
+    Object.assign(playerState, snapshot || {});
+
+    const hasVideo = Boolean(playerState.video_id);
+    if (!hasVideo) {
+        if (!inlinePlayerPending) {
+            hideInlinePlayerShell();
+        }
+        return;
+    }
+
+    console.log('[player] State update:', {
+        loaded: playerState.is_loaded,
+        paused: playerState.paused,
+        position: playerState.position_secs?.toFixed(1),
+        duration: playerState.duration_secs?.toFixed(1),
+    });
+
+    inlinePlayerPending = false;
+    showInlinePlayerShell(
+        playerState.title || 'Now playing',
+        playerState.video_path || 'Bundled mpv with subtitle and track controls'
+    );
+
+    document.getElementById('player-time-current').textContent = formatDuration(playerState.position_secs);
+    document.getElementById('player-time-total').textContent = formatDuration(playerState.duration_secs);
+    document.getElementById('player-volume-label').textContent = `${Math.round(playerState.volume ?? 100)}%`;
+    document.getElementById('player-status').textContent = playerState.is_loaded ? 'Playing in Cinematic' : 'Loading video...';
+
+    const progress = document.getElementById('player-progress');
+    progress.max = playerState.duration_secs || 0;
+    if (!isPlayerScrubbing) {
+        progress.value = playerState.position_secs || 0;
+    }
+
+    const volume = document.getElementById('player-volume');
+    volume.value = Math.round(playerState.volume ?? 100);
+
+    updatePlayerSelectOptions(
+        document.getElementById('player-subtitles'),
+        playerState.subtitle_tracks || [],
+        playerState.active_subtitle_id,
+        true,
+        'No subtitles'
+    );
+    updatePlayerSelectOptions(
+        document.getElementById('player-audio'),
+        playerState.audio_tracks || [],
+        playerState.active_audio_id,
+        false,
+        'No audio tracks'
+    );
+
+    renderInlinePlayerPlayIcon(Boolean(playerState.paused));
+    document.getElementById('player-fullscreen').classList.toggle('active', Boolean(playerState.fullscreen));
+    document.body.classList.toggle('is-fullscreen', Boolean(playerState.fullscreen));
+    scheduleInlinePlayerSurfaceSync();
+}
+
+async function refreshInlinePlayerSnapshot() {
+    try {
+        const snapshot = await invoke('get_player_snapshot');
+        renderInlinePlayer(snapshot);
+    } catch (error) {
+        console.error('Failed to load player snapshot', error);
+    }
+}
+
+function setupInlinePlayer() {
+    const playToggle = document.getElementById('player-play-toggle');
+    if (!playToggle) return;
+
+    const overlay = document.getElementById('inline-player-overlay');
+    if (overlay) {
+        const resetIdleTimer = () => {
+            overlay.classList.remove('idle');
+            clearTimeout(playerIdleTimeout);
+            playerIdleTimeout = window.setTimeout(() => {
+                if (isInlinePlayerVisible() && !isPlayerScrubbing && !playerState.paused) {
+                    overlay.classList.add('idle');
+                }
+            }, 2500);
+        };
+
+        overlay.addEventListener('mousemove', resetIdleTimer);
+        overlay.addEventListener('mousedown', resetIdleTimer);
+        overlay.addEventListener('touchstart', resetIdleTimer);
+        overlay.addEventListener('keydown', resetIdleTimer);
+        overlay.addEventListener('mouseleave', () => {
+            if (isInlinePlayerVisible() && !playerState.paused) {
+                overlay.classList.add('idle');
+            }
+        });
+    }
+
+    playToggle.addEventListener('click', () => {
+        invoke('player_toggle_pause').catch(error => showToast(`Failed to toggle playback: ${error}`, 'error'));
+    });
+
+    document.getElementById('player-seek-back').addEventListener('click', () => {
+        invoke('player_seek_relative', { seconds: -10 }).catch(error => showToast(`Failed to seek: ${error}`, 'error'));
+    });
+
+    document.getElementById('player-seek-forward').addEventListener('click', () => {
+        invoke('player_seek_relative', { seconds: 10 }).catch(error => showToast(`Failed to seek: ${error}`, 'error'));
+    });
+
+    const progress = document.getElementById('player-progress');
+    progress.addEventListener('pointerdown', () => {
+        isPlayerScrubbing = true;
+    });
+    progress.addEventListener('pointerup', async () => {
+        isPlayerScrubbing = false;
+        await invoke('player_seek_to', { seconds: Number(progress.value) || 0 });
+    });
+    progress.addEventListener('change', async () => {
+        isPlayerScrubbing = false;
+        await invoke('player_seek_to', { seconds: Number(progress.value) || 0 });
+    });
+    progress.addEventListener('input', () => {
+        document.getElementById('player-time-current').textContent = formatDuration(Number(progress.value) || 0);
+    });
+
+    const volume = document.getElementById('player-volume');
+    volume.addEventListener('input', () => {
+        document.getElementById('player-volume-label').textContent = `${Math.round(Number(volume.value) || 0)}%`;
+    });
+    volume.addEventListener('change', () => {
+        invoke('player_set_volume', { volume: Number(volume.value) || 0 }).catch(error => {
+            showToast(`Failed to set volume: ${error}`, 'error');
+        });
+    });
+
+    document.getElementById('player-subtitles').addEventListener('change', event => {
+        const value = event.target.value;
+        invoke('player_set_subtitle_track', {
+            trackId: value ? Number(value) : null,
+        }).catch(error => showToast(`Failed to switch subtitles: ${error}`, 'error'));
+    });
+
+    document.getElementById('player-audio').addEventListener('change', event => {
+        const value = event.target.value;
+        invoke('player_set_audio_track', {
+            trackId: value ? Number(value) : null,
+        }).catch(error => showToast(`Failed to switch audio: ${error}`, 'error'));
+    });
+
+    document.getElementById('player-fullscreen').addEventListener('click', () => {
+        invoke('player_toggle_fullscreen').catch(error => showToast(`Failed to toggle fullscreen: ${error}`, 'error'));
+        scheduleInlinePlayerSurfaceSyncBurst();
+    });
+
+    document.getElementById('player-close').addEventListener('click', () => {
+        invoke('close_internal_player').catch(error => showToast(`Failed to close player: ${error}`, 'error'));
+    });
+
+    window.addEventListener('resize', () => {
+        scheduleInlinePlayerSurfaceSyncBurst();
+    });
+
+    const surface = document.getElementById('inline-player-surface');
+    if (window.ResizeObserver && surface) {
+        playerSurfaceObserver = new ResizeObserver(() => {
+            scheduleInlinePlayerSurfaceSync();
+        });
+        playerSurfaceObserver.observe(surface);
+    }
+
+    if (tauriEvent?.listen) {
+        tauriEvent.listen(PLAYER_STATE_EVENT, event => {
+            renderInlinePlayer(event.payload);
+        }).catch(() => {});
+    }
 }
 
 applyTheme(getPreferredTheme());
@@ -93,10 +464,12 @@ let featuredVideoId = null;
 
 // ─── Initialize ───
 document.addEventListener('DOMContentLoaded', async () => {
+    setupInlinePlayer();
     await loadData();
     setupEventListeners();
     setupScrollReveal();
     renderCurrentView();
+    await refreshInlinePlayerSnapshot();
 });
 
 // ─── Data Loading ───
@@ -197,9 +570,39 @@ async function runVideoEnrichmentCycle() {
 
         if (changed) {
             allVideos = await invoke('get_all_videos');
-            renderCurrentView();
             updateStats();
             loadThumbnailsBatch();
+
+            // Update DOM in-place for any metadata changes to avoid full grid re-renders
+            for (const video of allVideos) {
+                const cards = document.querySelectorAll(`.video-card[data-video-id="${video.id}"]`);
+                if (cards.length > 0) {
+                    const duration = formatDuration(video.duration_secs);
+                    const fileSize = formatFileSize(video.file_size);
+                    const resolution = video.width && video.height ? `${video.width}×${video.height}` : '';
+
+                    cards.forEach(card => {
+                        let durationEl = card.querySelector('.card-duration');
+                        if (duration && !durationEl) {
+                            const thumbnailDiv = card.querySelector('.card-thumbnail');
+                            if (thumbnailDiv) {
+                                thumbnailDiv.insertAdjacentHTML('beforeend', `<div class="card-duration">${duration}</div>`);
+                            }
+                        } else if (durationEl) {
+                            durationEl.textContent = duration;
+                        }
+
+                        const metaEl = card.querySelector('.card-meta');
+                        if (metaEl) {
+                            metaEl.innerHTML = `
+                                ${fileSize ? `<span>${fileSize}</span>` : ''}
+                                ${fileSize && resolution ? '<span class="card-meta-dot"></span>' : ''}
+                                ${resolution ? `<span>${resolution}</span>` : ''}
+                            `;
+                        }
+                    });
+                }
+            }
         }
     })().finally(async () => {
         videoEnrichmentPromise = null;
@@ -404,6 +807,19 @@ function setupEventListeners() {
         });
     }
 
+    document.querySelectorAll('[data-playback-mode]').forEach(button => {
+        button.addEventListener('click', () => {
+            setPlaybackMode(button.dataset.playbackMode);
+        });
+    });
+    updatePlaybackModeControls();
+
+    if (tauriEvent?.listen) {
+        tauriEvent.listen(PLAYBACK_UPDATED_EVENT, () => {
+            schedulePlaybackSync();
+        }).catch(() => {});
+    }
+
     // Sidebar auto-expand hover logic
     let hoverExpandTimeout = null;
 
@@ -526,6 +942,49 @@ function setupEventListeners() {
 
     // Keyboard
     document.addEventListener('keydown', (e) => {
+        const activeTag = document.activeElement?.tagName;
+        const isEditable = document.activeElement?.isContentEditable
+            || activeTag === 'INPUT'
+            || activeTag === 'TEXTAREA'
+            || activeTag === 'SELECT';
+
+        if (isInlinePlayerVisible()) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                invoke('close_internal_player').catch(error => {
+                    showToast(`Failed to close player: ${error}`, 'error');
+                });
+                return;
+            }
+
+            if (!isEditable) {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    invoke('player_toggle_pause').catch(() => {});
+                    return;
+                }
+
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    invoke('player_seek_relative', { seconds: -5 }).catch(() => {});
+                    return;
+                }
+
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    invoke('player_seek_relative', { seconds: 5 }).catch(() => {});
+                    return;
+                }
+
+                if (e.key.toLowerCase() === 'f') {
+                    e.preventDefault();
+                    invoke('player_toggle_fullscreen').catch(() => {});
+                    scheduleInlinePlayerSurfaceSyncBurst();
+                    return;
+                }
+            }
+        }
+
         if (e.key === 'Escape') {
             closeVideoMenus();
             closeModal();
@@ -734,6 +1193,7 @@ async function renderCollectionView() {
 
 function renderSettings() {
     const list = document.getElementById('settings-libraries-list');
+    updatePlaybackModeControls();
     list.innerHTML = libraries.map(lib => `
         <div class="settings-library-item">
             <div class="settings-library-info">
@@ -968,11 +1428,7 @@ function updatePlayButton(video) {
     const button = document.getElementById('modal-play');
     const label = button.querySelector('span');
     if (!label) return;
-
-    const resumeSecs = getResumeSeconds(video);
-    label.textContent = resumeSecs >= 5
-        ? `Resume in VLC (${formatDuration(resumeSecs)})`
-        : 'Play in VLC';
+    label.textContent = getPlaybackActionLabel(video);
 }
 
 function openModal(video) {
@@ -1439,10 +1895,24 @@ async function refreshLibrary() {
 
 // ─── Playback ───
 async function playVideo(video) {
+    const isInternal = getPlaybackMode() === 'internal';
     try {
         closeVideoMenus();
         const resumeSecs = getResumeSeconds(video);
-        const result = await invoke('open_in_player', {
+        console.log('[player] Playing video:', { id: video.id, mode: isInternal ? 'internal' : 'external', resumeSecs });
+        if (isInternal) {
+            inlinePlayerPending = true;
+            closeModal();
+            showInlinePlayerShell(video.title, video.path);
+            try {
+                await appWindow.setFullscreen(true);
+            } catch (error) {
+                console.error("Failed to auto-fullscreen:", error);
+            }
+            scheduleInlinePlayerSurfaceSyncBurst();
+        }
+
+        const result = await invoke(isInternal ? 'open_internal_player' : 'open_external_player', {
             videoId: video.id,
             videoPath: video.path,
             resumeSecs,
@@ -1450,7 +1920,28 @@ async function playVideo(video) {
 
         if (result.already_running) {
             showToast(result.message, 'info');
+            if (isInternal) {
+                scheduleInlinePlayerSurfaceSyncBurst();
+                refreshInlinePlayerSnapshot();
+            }
             return;
+        }
+
+        if (isInternal && !result.fallback_used) {
+            showToast(
+                result.resumed
+                    ? `Resuming in Cinematic from ${formatDuration(result.resume_position_secs)}...`
+                    : 'Opening in Cinematic...',
+                'success'
+            );
+            schedulePlaybackSync();
+            scheduleInlinePlayerSurfaceSyncBurst();
+            refreshInlinePlayerSnapshot();
+            return;
+        }
+
+        if (isInternal) {
+            hideInlinePlayerShell();
         }
 
         if (result.tracking_enabled) {
@@ -1468,6 +1959,10 @@ async function playVideo(video) {
             syncVideoState();
         }, 1500);
     } catch (e) {
+        if (isInternal) {
+            hideInlinePlayerShell();
+        }
+        console.error('[player] Failed to open video:', e);
         showToast('Failed to open video: ' + e, 'error');
     }
 }

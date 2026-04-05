@@ -1,11 +1,12 @@
 mod commands;
 mod database;
 mod models;
+mod player;
 mod scanner;
 
+use commands::AppState;
 use std::sync::Arc;
 use tauri::Manager;
-use commands::AppState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -14,23 +15,28 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // Get app data directory for database and thumbnails
-            let app_data_dir = app.path()
+            let app_data_dir = app
+                .path()
                 .app_data_dir()
                 .expect("Failed to get app data directory");
-            
-            let thumbnails_dir = app_data_dir.join("thumbnails");
-            std::fs::create_dir_all(&thumbnails_dir).expect("Failed to create thumbnails directory");
-            let collection_covers_dir = app_data_dir.join("collection_covers");
-            std::fs::create_dir_all(&collection_covers_dir).expect("Failed to create collection covers directory");
 
-            let db = database::Database::new(app_data_dir)
-                .expect("Failed to initialize database");
+            let thumbnails_dir = app_data_dir.join("thumbnails");
+            std::fs::create_dir_all(&thumbnails_dir)
+                .expect("Failed to create thumbnails directory");
+            let collection_covers_dir = app_data_dir.join("collection_covers");
+            std::fs::create_dir_all(&collection_covers_dir)
+                .expect("Failed to create collection covers directory");
+
+            let db = database::Database::new(app_data_dir).expect("Failed to initialize database");
 
             app.manage(AppState {
                 db: Arc::new(db),
                 thumbnails_dir: thumbnails_dir.to_string_lossy().to_string(),
                 collection_covers_dir: collection_covers_dir.to_string_lossy().to_string(),
-                playback_sessions: Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
+                playback_sessions: Arc::new(
+                    std::sync::Mutex::new(std::collections::HashMap::new()),
+                ),
+                player_manager: Arc::new(player::PlayerManager::new()),
             });
 
             Ok(())
@@ -57,6 +63,18 @@ pub fn run() {
             commands::get_thumbnail_base64,
             commands::get_image_base64,
             // Playback
+            commands::open_internal_player,
+            commands::get_player_snapshot,
+            commands::player_set_surface_bounds,
+            commands::player_toggle_pause,
+            commands::player_seek_relative,
+            commands::player_seek_to,
+            commands::player_set_volume,
+            commands::player_set_subtitle_track,
+            commands::player_set_audio_track,
+            commands::player_toggle_fullscreen,
+            commands::close_internal_player,
+            commands::open_external_player,
             commands::open_in_player,
             // Collections
             commands::create_collection,

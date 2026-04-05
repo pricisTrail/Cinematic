@@ -17,7 +17,8 @@
         "minHeight": 600,
         "decorations": false,
         "resizable": true,
-        "center": true
+        "center": true,
+        "transparent": true
       }
     ],
     "security": {
@@ -26,6 +27,12 @@
   },
   "bundle": {
     "active": true,
+    "externalBin": [
+      "binaries/mpv"
+    ],
+    "resources": [
+      "resources/mpv/*"
+    ],
     "targets": "all",
     "icon": [
       "icons/32x32.png",

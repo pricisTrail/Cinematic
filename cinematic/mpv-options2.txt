@@ -1,0 +1,1295 @@
+[   0.006][v][cplayer] mpv v0.41.0-423-g428edff9c Copyright © 2000-2026 mpv/MPlayer/mplayer2 projects
+[   0.006][v][cplayer]  built on Apr  4 2026 00:07:41
+[   0.006][v][cplayer] libplacebo version: v7.362.0 (v7.360.0-14-g54e5275-dirty)
+[   0.007][v][cplayer] FFmpeg version: N-123826-gb47a45986
+[   0.007][v][cplayer] FFmpeg library versions:
+[   0.007][v][cplayer]    libavcodec      62.29.101
+[   0.007][v][cplayer]    libavdevice     62.4.100
+[   0.007][v][cplayer]    libavfilter     11.15.101
+[   0.007][v][cplayer]    libavformat     62.13.101
+[   0.007][v][cplayer]    libavutil       60.29.100
+[   0.009][v][cplayer]    libswresample   6.4.100
+[   0.009][v][cplayer]    libswscale      9.7.100
+[   0.009][v][cplayer] Configuration: -Ddebug=true -Db_ndebug=true -Doptimization=3 -Db_lto=true -Db_lto_mode=thin -Dlibmpv=true -Dpdf-build=enabled -Dlua=enabled -Djavascript=enabled -Dsdl2-gamepad=enabled -Dlibarchive=enabled -Dlibbluray=enabled -Ddvdnav=enabled -Duchardet=enabled -Drubberband=enabled -Dlcms2=enabled -Dopenal=enabled -Dspirv-cross=enabled -Dvulkan=enabled -Dvapoursynth=enabled -Dsubrandr=enabled -Dsixel=enabled -Dgl=enabled -Degl-angle=enabled -Dc_args=-Wno-error=int-conversion -Dprefix=/__w/mpv-winbuild-cmake/mpv-winbuild-cmake/build_x86_64/x86_64-w64-mingw32 -Dlibdir=/__w/mpv-winbuild-cmake/mpv-winbuild-cmake/build_x86_64/x86_64-w64-mingw32/lib -Ddefault_library=shared -Dprefer_static=True --cross-file=/__w/mpv-winbuild-cmake/mpv-winbuild-cmake/build_x86_64/meson_cross.txt
+[   0.009][v][cplayer] List of enabled features: amf build-date cplugins cuda-hwaccel cuda-interop d3d-hwaccel d3d11 d3d9-hwaccel debug direct3d dos-paths dvdnav dxgi-debug-d3d11 egl-angle egl-angle-win32 ffmpeg ffnvcodec gl gl-dxinterop gl-dxinterop-d3d9 gl-win32 glob glob-win32 gpl iconv javascript jpeg lcms2 libarchive libass libavdevice libbluray libplacebo luajit openal rubberband rubberband-3 sdl2-gamepad shaderc sixel spirv-cross subrandr uchardet vaapi vaapi-win32 vapoursynth vector vulkan wasapi win32 win32-desktop win32-executable win32-smtc win32-threads zimg zimg-st428 zlib
+[   0.009][v][cplayer] Built with NDEBUG.
+[   0.009][v][cplayer] Command line options: '--player-operation-mode=pseudo-gui' '--list-options' '--log-file=mpv-options2.txt'
+[   0.009][v][cplayer] mpv v0.41.0-423-g428edff9c Copyright © 2000-2026 mpv/MPlayer/mplayer2 projects
+[   0.009][v][cplayer]  built on Apr  4 2026 00:07:41
+[   0.009][v][cplayer] libplacebo version: v7.362.0 (v7.360.0-14-g54e5275-dirty)
+[   0.009][v][cplayer] FFmpeg version: N-123826-gb47a45986
+[   0.009][v][cplayer] FFmpeg library versions:
+[   0.009][v][cplayer]    libavcodec      62.29.101
+[   0.009][v][cplayer]    libavdevice     62.4.100
+[   0.009][v][cplayer]    libavfilter     11.15.101
+[   0.009][v][cplayer]    libavformat     62.13.101
+[   0.009][v][cplayer]    libavutil       60.29.100
+[   0.009][v][cplayer]    libswresample   6.4.100
+[   0.009][v][cplayer]    libswscale      9.7.100
+[   0.009][v][cplayer] Configuration: -Ddebug=true -Db_ndebug=true -Doptimization=3 -Db_lto=true -Db_lto_mode=thin -Dlibmpv=true -Dpdf-build=enabled -Dlua=enabled -Djavascript=enabled -Dsdl2-gamepad=enabled -Dlibarchive=enabled -Dlibbluray=enabled -Ddvdnav=enabled -Duchardet=enabled -Drubberband=enabled -Dlcms2=enabled -Dopenal=enabled -Dspirv-cross=enabled -Dvulkan=enabled -Dvapoursynth=enabled -Dsubrandr=enabled -Dsixel=enabled -Dgl=enabled -Degl-angle=enabled -Dc_args=-Wno-error=int-conversion -Dprefix=/__w/mpv-winbuild-cmake/mpv-winbuild-cmake/build_x86_64/x86_64-w64-mingw32 -Dlibdir=/__w/mpv-winbuild-cmake/mpv-winbuild-cmake/build_x86_64/x86_64-w64-mingw32/lib -Ddefault_library=shared -Dprefer_static=True --cross-file=/__w/mpv-winbuild-cmake/mpv-winbuild-cmake/build_x86_64/meson_cross.txt
+[   0.009][v][cplayer] List of enabled features: amf build-date cplugins cuda-hwaccel cuda-interop d3d-hwaccel d3d11 d3d9-hwaccel debug direct3d dos-paths dvdnav dxgi-debug-d3d11 egl-angle egl-angle-win32 ffmpeg ffnvcodec gl gl-dxinterop gl-dxinterop-d3d9 gl-win32 glob glob-win32 gpl iconv javascript jpeg lcms2 libarchive libass libavdevice libbluray libplacebo luajit openal rubberband rubberband-3 sdl2-gamepad shaderc sixel spirv-cross subrandr uchardet vaapi vaapi-win32 vapoursynth vector vulkan wasapi win32 win32-desktop win32-executable win32-smtc win32-threads zimg zimg-st428 zlib
+[   0.009][v][cplayer] Built with NDEBUG.
+[   0.009][d][global] home path: '' -> 'C:\Users\Administrator\AppData\Roaming/mpv'
+[   0.009][d][global] user path: '~~home/' -> 'C:\Users\Administrator\AppData\Roaming/mpv'
+[   0.009][d][global] user path: '~~old_home/' -> ''
+[   0.009][d][global] config path: 'encoding-profiles.conf' -/-> 'C:\Users\Administrator\AppData\Roaming/mpv/encoding-profiles.conf'
+[   0.009][d][global] config path: 'encoding-profiles.conf' -/-> 'F:/2026/march 2026/explore/cinematic/src-tauri/binaries/encoding-profiles.conf'
+[   0.009][d][global] config path: 'encoding-profiles.conf' -/-> 'F:/2026/march 2026/explore/cinematic/src-tauri/binaries/mpv/encoding-profiles.conf'
+[   0.009][d][global] config path: 'mpv.conf' -/-> 'C:\Users\Administrator\AppData\Roaming/mpv/mpv.conf'
+[   0.009][d][global] config path: 'config' -/-> 'C:\Users\Administrator\AppData\Roaming/mpv/config'
+[   0.009][d][global] config path: 'mpv.conf' -/-> 'F:/2026/march 2026/explore/cinematic/src-tauri/binaries/mpv.conf'
+[   0.009][d][global] config path: 'config' -/-> 'F:/2026/march 2026/explore/cinematic/src-tauri/binaries/config'
+[   0.009][d][global] config path: 'mpv.conf' -/-> 'F:/2026/march 2026/explore/cinematic/src-tauri/binaries/mpv/mpv.conf'
+[   0.009][d][global] config path: 'config' -/-> 'F:/2026/march 2026/explore/cinematic/src-tauri/binaries/mpv/config'
+[   0.009][v][cplayer] Setting option 'player-operation-mode' = 'pseudo-gui' (flags = 8)
+[   0.009][v][cplayer] Setting option 'list-options' = '' (flags = 8)
+[   0.009][i][cplayer] Options:
+[   0.009][i][cplayer] 
+[   0.009][i][cplayer]  --ab-loop-a                      Time (default: no)
+[   0.009][i][cplayer]  --ab-loop-b                      Time (default: no)
+[   0.009][i][cplayer]  --ab-loop-count                  Choices: inf (or an integer) (0 to 2147483647) (default: inf)
+[   0.009][i][cplayer]  --access-references              Flag (default: yes)
+[   0.009][i][cplayer]  --ad                             String (default: )
+[   0.009][i][cplayer]  --ad-lavc-ac3drc                 Float (0 to 6) (default: 0)
+[   0.009][i][cplayer]  --ad-lavc-downmix                Flag (default: no)
+[   0.009][i][cplayer]  --ad-lavc-o                      Key/value list (default: )
+[   0.009][i][cplayer]     --ad-lavc-o-add
+[   0.009][i][cplayer]     --ad-lavc-o-append
+[   0.009][i][cplayer]     --ad-lavc-o-clr
+[   0.009][i][cplayer]     --ad-lavc-o-del
+[   0.009][i][cplayer]     --ad-lavc-o-set
+[   0.009][i][cplayer]     --ad-lavc-o-remove
+[   0.009][i][cplayer]  --ad-lavc-threads                Integer (0 to 16) (default: 1)
+[   0.009][i][cplayer]  --ad-queue-enable                Flag (default: no)
+[   0.009][i][cplayer]  --ad-queue-max-bytes             ByteSize (0 to 4.6116860184274e+18) (default: 1.000 MiB)
+[   0.009][i][cplayer]  --ad-queue-max-samples           Integer64 (0 to any) (default: 48000)
+[   0.009][i][cplayer]  --ad-queue-max-secs              Double (0 to any) (default: 1)
+[   0.009][i][cplayer]  --af                             Object settings list (default: )
+[   0.009][i][cplayer]     --af-add
+[   0.009][i][cplayer]     --af-append
+[   0.009][i][cplayer]     --af-clr
+[   0.009][i][cplayer]     --af-help
+[   0.009][i][cplayer]     --af-pre
+[   0.009][i][cplayer]     --af-set
+[   0.009][i][cplayer]     --af-toggle
+[   0.009][i][cplayer]     --af-remove
+[   0.009][i][cplayer]  --aid                            Choices: no auto (or an integer) (0 to 8190) (default: auto)
+[   0.009][i][cplayer]  --alang                          String list (default: )
+[   0.009][i][cplayer]     --alang-add
+[   0.009][i][cplayer]     --alang-append
+[   0.009][i][cplayer]     --alang-clr
+[   0.009][i][cplayer]     --alang-del
+[   0.009][i][cplayer]     --alang-pre
+[   0.009][i][cplayer]     --alang-set
+[   0.009][i][cplayer]     --alang-toggle
+[   0.009][i][cplayer]     --alang-remove
+[   0.009][i][cplayer]  --allow-delayed-peak-detect      Flag (default: no)
+[   0.009][i][cplayer]  --angle-d3d11-feature-level      Choices: 11_0 10_1 10_0 9_3 (default: 11_0)
+[   0.009][i][cplayer]  --angle-d3d11-warp               Choices: auto no yes (default: auto)
+[   0.009][i][cplayer]  --angle-egl-windowing            Choices: auto no yes (default: auto)
+[   0.009][i][cplayer]  --angle-flip                     Flag (default: yes)
+[   0.009][i][cplayer]  --angle-renderer                 Choices: auto d3d9 d3d11 (default: auto)
+[   0.009][i][cplayer]  --ao                             Object settings list (default: )
+[   0.009][i][cplayer]     --ao-add
+[   0.009][i][cplayer]     --ao-append
+[   0.009][i][cplayer]     --ao-clr
+[   0.009][i][cplayer]     --ao-help
+[   0.009][i][cplayer]     --ao-pre
+[   0.009][i][cplayer]     --ao-set
+[   0.009][i][cplayer]     --ao-toggle
+[   0.009][i][cplayer]     --ao-remove
+[   0.009][i][cplayer]  --ao-null-broken-delay           Flag (default: no)
+[   0.009][i][cplayer]  --ao-null-broken-eof             Flag (default: no)
+[   0.009][i][cplayer]  --ao-null-buffer                 Float (0 to 100) (default: 0.2)
+[   0.009][i][cplayer]  --ao-null-channel-layouts        Audio channels or channel map (default: )
+[   0.009][i][cplayer]  --ao-null-format                 Audio format (default: no)
+[   0.009][i][cplayer]  --ao-null-latency                Float (0 to 100) (default: 0)
+[   0.009][i][cplayer]  --ao-null-outburst               Integer (1 to 100000) (default: 256)
+[   0.009][i][cplayer]  --ao-null-speed                  Float (0 to 10000) (default: 1)
+[   0.009][i][cplayer]  --ao-null-untimed                Flag (default: no)
+[   0.009][i][cplayer]  --ao-pcm-append                  Flag (default: no)
+[   0.009][i][cplayer]  --ao-pcm-file                    String (default: ) [file]
+[   0.009][i][cplayer]  --ao-pcm-waveheader              Flag (default: yes)
+[   0.009][i][cplayer]  --archive-exts                   String list (default: zip,rar,7z,cbz,cbr)
+[   0.009][i][cplayer]     --archive-exts-add
+[   0.009][i][cplayer]     --archive-exts-append
+[   0.009][i][cplayer]     --archive-exts-clr
+[   0.009][i][cplayer]     --archive-exts-del
+[   0.009][i][cplayer]     --archive-exts-pre
+[   0.009][i][cplayer]     --archive-exts-set
+[   0.009][i][cplayer]     --archive-exts-toggle
+[   0.009][i][cplayer]     --archive-exts-remove
+[   0.009][i][cplayer]  --audio                          alias for aid
+[   0.009][i][cplayer]  --audio-backward-batch           Integer (0 to 1024) (default: 10)
+[   0.009][i][cplayer]  --audio-backward-overlap         Choices: auto (or an integer) (0 to 1024) (default: auto)
+[   0.009][i][cplayer]  --audio-buffer                   Double (0 to 10) (default: 0.2)
+[   0.009][i][cplayer]  --audio-channels                 Audio channels or channel map (default: auto-safe)
+[   0.009][i][cplayer]  --audio-client-name              String (default: mpv)
+[   0.009][i][cplayer]  --audio-delay                    Float (default: 0)
+[   0.009][i][cplayer]  --audio-demuxer                  String (default: )
+[   0.009][i][cplayer]  --audio-device                   String (default: auto)
+[   0.009][i][cplayer]  --audio-display                  Choices: no embedded-first external-first (default: embedded-first)
+[   0.009][i][cplayer]  --audio-exclusive                Flag (default: no)
+[   0.009][i][cplayer]  --audio-exts                     String list (default: aac,ac3,aiff,ape,au,dts,eac3,flac,m4a,mka,mp1,mp2,mp3,mpc,oga,ogg,ogm,opus,tak,thd,tta,wav,wma,wv)
+[   0.009][i][cplayer]     --audio-exts-add
+[   0.009][i][cplayer]     --audio-exts-append
+[   0.009][i][cplayer]     --audio-exts-clr
+[   0.009][i][cplayer]     --audio-exts-del
+[   0.009][i][cplayer]     --audio-exts-pre
+[   0.009][i][cplayer]     --audio-exts-set
+[   0.009][i][cplayer]     --audio-exts-toggle
+[   0.009][i][cplayer]     --audio-exts-remove
+[   0.009][i][cplayer]  --audio-fallback-to-null         Flag (default: no)
+[   0.009][i][cplayer]  --audio-file                     alias for --audio-files-append (CLI/config files only)
+[   0.009][i][cplayer]  --audio-file-auto                Choices: no exact fuzzy all (default: no)
+[   0.009][i][cplayer]  --audio-file-auto-exts           alias for audio-exts
+[   0.009][i][cplayer]  --audio-file-paths               String list (default: ) [file]
+[   0.009][i][cplayer]     --audio-file-paths-add
+[   0.009][i][cplayer]     --audio-file-paths-append
+[   0.009][i][cplayer]     --audio-file-paths-clr
+[   0.009][i][cplayer]     --audio-file-paths-del
+[   0.009][i][cplayer]     --audio-file-paths-pre
+[   0.009][i][cplayer]     --audio-file-paths-set
+[   0.009][i][cplayer]     --audio-file-paths-toggle
+[   0.009][i][cplayer]     --audio-file-paths-remove
+[   0.009][i][cplayer]  --audio-files                    String list (default: ) [file]
+[   0.009][i][cplayer]     --audio-files-add
+[   0.010][i][cplayer]     --audio-files-append
+[   0.010][i][cplayer]     --audio-files-clr
+[   0.010][i][cplayer]     --audio-files-del
+[   0.010][i][cplayer]     --audio-files-pre
+[   0.010][i][cplayer]     --audio-files-set
+[   0.010][i][cplayer]     --audio-files-toggle
+[   0.010][i][cplayer]     --audio-files-remove
+[   0.010][i][cplayer]  --audio-format                   Audio format (default: no)
+[   0.010][i][cplayer]  --audio-normalize-downmix        Flag (default: no)
+[   0.010][i][cplayer]  --audio-pitch-correction         Flag (default: yes)
+[   0.010][i][cplayer]  --audio-resample-cutoff          Double (0 to 1) (default: 0)
+[   0.010][i][cplayer]  --audio-resample-filter-size     Integer (0 to 32) (default: 16)
+[   0.010][i][cplayer]  --audio-resample-linear          Flag (default: no)
+[   0.010][i][cplayer]  --audio-resample-max-output-size Double (default: 40)
+[   0.010][i][cplayer]  --audio-resample-phase-shift     Integer (0 to 30) (default: 10)
+[   0.010][i][cplayer]  --audio-reversal-buffer          ByteSize (0 to 4.6116860184274e+18) (default: 64.000 MiB)
+[   0.010][i][cplayer]  --audio-samplerate               Integer (0 to 768000) (default: 0)
+[   0.010][i][cplayer]  --audio-set-media-role           Flag (default: no)
+[   0.010][i][cplayer]  --audio-spdif                    String (default: )
+[   0.010][i][cplayer]  --audio-stream-silence           Flag (default: no)
+[   0.010][i][cplayer]  --audio-swresample-o             Key/value list (default: )
+[   0.010][i][cplayer]     --audio-swresample-o-add
+[   0.010][i][cplayer]     --audio-swresample-o-append
+[   0.010][i][cplayer]     --audio-swresample-o-clr
+[   0.010][i][cplayer]     --audio-swresample-o-del
+[   0.010][i][cplayer]     --audio-swresample-o-set
+[   0.010][i][cplayer]     --audio-swresample-o-remove
+[   0.010][i][cplayer]  --audio-wait-open                Float (0 to 60) (default: 0)
+[   0.010][i][cplayer]  --auto-window-resize             Flag (default: yes)
+[   0.010][i][cplayer]  --autocreate-playlist            Choices: no filter same (default: no)
+[   0.010][i][cplayer]  --autofit                        Window size (default: )
+[   0.010][i][cplayer]  --autofit-larger                 Window size (default: )
+[   0.010][i][cplayer]  --autofit-smaller                Window size (default: )
+[   0.010][i][cplayer]  --autoload-files                 Flag (default: yes)
+[   0.010][i][cplayer]  --autosync                       Choices: no (or an integer) (0 to 10000) (default: 0)
+[   0.010][i][cplayer]  --backdrop-type                  Choices: auto none mica acrylic mica-alt (default: auto)
+[   0.010][i][cplayer]  --background                     Choices: none color tiles (default: tiles)
+[   0.010][i][cplayer]  --background-blur-radius         Float (default: 16)
+[   0.010][i][cplayer]  --background-color               Color (default: #FF000000)
+[   0.010][i][cplayer]  --background-tile-color-0        Color (default: #FFEDEDED)
+[   0.010][i][cplayer]  --background-tile-color-1        Color (default: #FFDEDEDE)
+[   0.010][i][cplayer]  --background-tile-size           Integer (1 to 4096) (default: 16)
+[   0.010][i][cplayer]  --blend-subtitles                Choices: no yes video (default: no)
+[   0.010][i][cplayer]  --bluray-angle                   Integer (1 to 999) (default: 1)
+[   0.010][i][cplayer]  --bluray-device                  String (default: ) [file]
+[   0.010][i][cplayer]  --border                         Flag (default: yes)
+[   0.010][i][cplayer]  --border-background              Choices: none color tiles blur (default: color)
+[   0.010][i][cplayer]  --brightness                     Float (-100 to 100) (default: 0)
+[   0.010][i][cplayer]  --cache                          Choices: no auto yes (default: auto)
+[   0.010][i][cplayer]  --cache-on-disk                  Flag (default: no)
+[   0.010][i][cplayer]  --cache-pause                    Flag (default: yes)
+[   0.010][i][cplayer]  --cache-pause-initial            Flag (default: no)
+[   0.010][i][cplayer]  --cache-pause-wait               Float (0 to 3.4028234663853e+38) (default: 1)
+[   0.010][i][cplayer]  --cache-secs                     Double (0 to any) (default: 3600000)
+[   0.010][i][cplayer]  --chapter-merge-threshold        Integer (0 to 10000) (default: 100)
+[   0.010][i][cplayer]  --chapter-seek-threshold         Double (default: 5)
+[   0.010][i][cplayer]  --chapters-file                  String (default: ) [file]
+[   0.010][i][cplayer]  --clipboard-backends             Object settings list (default: win32,mac,wayland,x11,vo)
+[   0.010][i][cplayer]     --clipboard-backends-add
+[   0.010][i][cplayer]     --clipboard-backends-append
+[   0.010][i][cplayer]     --clipboard-backends-clr
+[   0.010][i][cplayer]     --clipboard-backends-help
+[   0.010][i][cplayer]     --clipboard-backends-pre
+[   0.010][i][cplayer]     --clipboard-backends-set
+[   0.010][i][cplayer]     --clipboard-backends-toggle
+[   0.010][i][cplayer]     --clipboard-backends-remove
+[   0.010][i][cplayer]  --clipboard-monitor              Flag (default: no)
+[   0.010][i][cplayer]  --clipboard-xwayland             Flag (default: no)
+[   0.010][i][cplayer]  --config                         Flag (default: yes)
+[   0.010][i][cplayer]  --config-dir                     String (default: ) [not in config files] [file]
+[   0.010][i][cplayer]  --container-fps-override         Double (0 to any) (default: 0)
+[   0.010][i][cplayer]  --contrast                       Float (-100 to 100) (default: 0)
+[   0.010][i][cplayer]  --cookies                        Flag (default: no)
+[   0.010][i][cplayer]  --cookies-file                   String (default: ) [file]
+[   0.010][i][cplayer]  --corner-rounding                Float (0 to 1) (default: 0)
+[   0.010][i][cplayer]  --correct-downscaling            Flag (default: yes)
+[   0.010][i][cplayer]  --correct-pts                    Flag (default: yes)
+[   0.010][i][cplayer]  --cover-art-auto                 Choices: no exact fuzzy all (default: exact)
+[   0.010][i][cplayer]  --cover-art-auto-exts            alias for image-exts
+[   0.010][i][cplayer]  --cover-art-file                 alias for --cover-art-files-append (CLI/config files only)
+[   0.010][i][cplayer]  --cover-art-files                String list (default: ) [file]
+[   0.010][i][cplayer]     --cover-art-files-add
+[   0.010][i][cplayer]     --cover-art-files-append
+[   0.010][i][cplayer]     --cover-art-files-clr
+[   0.010][i][cplayer]     --cover-art-files-del
+[   0.010][i][cplayer]     --cover-art-files-pre
+[   0.010][i][cplayer]     --cover-art-files-set
+[   0.010][i][cplayer]     --cover-art-files-toggle
+[   0.010][i][cplayer]     --cover-art-files-remove
+[   0.010][i][cplayer]  --cover-art-whitelist            String list (default: AlbumArt,Album,cover,front,AlbumArtSmall,Folder,.folder,thumb)
+[   0.010][i][cplayer]     --cover-art-whitelist-add
+[   0.010][i][cplayer]     --cover-art-whitelist-append
+[   0.010][i][cplayer]     --cover-art-whitelist-clr
+[   0.010][i][cplayer]     --cover-art-whitelist-del
+[   0.010][i][cplayer]     --cover-art-whitelist-pre
+[   0.010][i][cplayer]     --cover-art-whitelist-set
+[   0.010][i][cplayer]     --cover-art-whitelist-toggle
+[   0.010][i][cplayer]     --cover-art-whitelist-remove
+[   0.010][i][cplayer]  --cscale                         Choices:  bilinear bicubic_fast oversample spline16 spline36 spline64 sinc lanczos ginseng bicubic hermite catmull_rom mitchell robidoux robidouxsharp box nearest triangle gaussian jinc ewa_lanczos ewa_hanning ewa_ginseng ewa_lanczossharp ewa_lanczos4sharpest ewa_lanczossoft haasnsoft ewa_robidoux ewa_robidouxsharp bartlett cosine hanning tukey hamming quadric welch kaiser blackman sphinx (default: )
+[   0.010][i][cplayer]  --cscale-antiring                Float (0 to 1) (default: 0)
+[   0.010][i][cplayer]  --cscale-blur                    Float (default: 0)
+[   0.010][i][cplayer]  --cscale-clamp                   Float (0 to 1) (default: 0)
+[   0.010][i][cplayer]  --cscale-param1                  Float (default: default)
+[   0.010][i][cplayer]  --cscale-param2                  Float (default: default)
+[   0.010][i][cplayer]  --cscale-radius                  Float (0.5 to 16) (default: 0)
+[   0.010][i][cplayer]  --cscale-taper                   Float (0 to 1) (default: 0)
+[   0.010][i][cplayer]  --cscale-window                  Choices:  bartlett cosine hanning tukey hamming quadric welch kaiser blackman sphinx jinc (default: )
+[   0.010][i][cplayer]  --cscale-wparam                  Float (default: default)
+[   0.010][i][cplayer]  --cscale-wtaper                  Float (0 to 1) (default: 0)
+[   0.010][i][cplayer]  --cuda-decode-device             Choices: auto (or an integer) (0 to 2147483647) (default: auto)
+[   0.010][i][cplayer]  --cursor-autohide                Choices: no always (or an integer) (0 to 30000) (default: 1000)
+[   0.010][i][cplayer]  --cursor-autohide-fs-only        Flag (default: no)
+[   0.010][i][cplayer]  --d3d11-adapter                  String (default: )
+[   0.010][i][cplayer]  --d3d11-composition-size         Window size (default: )
+[   0.010][i][cplayer]  --d3d11-exclusive-fs             Flag (default: no)
+[   0.010][i][cplayer]  --d3d11-feature-level            Choices: 12_1 12_0 11_1 11_0 10_1 10_0 9_3 9_2 9_1 (default: 12_1)
+[   0.010][i][cplayer]  --d3d11-flip                     Flag (default: yes)
+[   0.010][i][cplayer]  --d3d11-output-csp               Choices: auto srgb linear pq bt.2020 (default: auto)
+[   0.010][i][cplayer]  --d3d11-output-format            Choices: auto rgba8 bgra8 rgb10_a2 rgba16f (default: auto)
+[   0.010][i][cplayer]  --d3d11-output-mode              Choices: auto window composition (default: auto)
+[   0.010][i][cplayer]  --d3d11-sync-interval            Integer (0 to 4) (default: 1)
+[   0.010][i][cplayer]  --d3d11-warp                     Choices: auto no yes (default: auto)
+[   0.010][i][cplayer]  --d3d11va-zero-copy              Flag (default: no)
+[   0.010][i][cplayer]  --deband                         Flag (default: no)
+[   0.010][i][cplayer]  --deband-grain                   Float (0 to 4096) (default: 32)
+[   0.010][i][cplayer]  --deband-iterations              Integer (0 to 16) (default: 1)
+[   0.010][i][cplayer]  --deband-range                   Float (1 to 64) (default: 16)
+[   0.010][i][cplayer]  --deband-threshold               Float (0 to 4096) (default: 48)
+[   0.010][i][cplayer]  --deinterlace                    Choices: no yes auto (default: no)
+[   0.010][i][cplayer]  --deinterlace-field-parity       Choices: tff bff auto (default: auto)
+[   0.010][i][cplayer]  --demuxer                        String (default: )
+[   0.010][i][cplayer]  --demuxer-backward-playback-step Double (0 to any) (default: 60)
+[   0.010][i][cplayer]  --demuxer-cache-dir              String (default: ) [file]
+[   0.010][i][cplayer]  --demuxer-cache-unlink-files     Choices: immediate whendone no (default: immediate)
+[   0.010][i][cplayer]  --demuxer-cache-wait             Flag (default: no)
+[   0.010][i][cplayer]  --demuxer-donate-buffer          Flag (default: yes)
+[   0.010][i][cplayer]  --demuxer-hysteresis-secs        Double (0 to any) (default: 0)
+[   0.010][i][cplayer]  --demuxer-lavf-allow-mimetype    Flag (default: yes)
+[   0.010][i][cplayer]  --demuxer-lavf-analyzeduration   Float (0 to 3600) (default: 0)
+[   0.010][i][cplayer]  --demuxer-lavf-buffersize        Integer (1 to 10485760) (default: 32768)
+[   0.010][i][cplayer]  --demuxer-lavf-format            String (default: )
+[   0.010][i][cplayer]  --demuxer-lavf-hacks             Flag (default: yes)
+[   0.010][i][cplayer]  --demuxer-lavf-linearize-timestamps Choices: no auto yes (default: auto)
+[   0.010][i][cplayer]  --demuxer-lavf-o                 Key/value list (default: )
+[   0.010][i][cplayer]     --demuxer-lavf-o-add
+[   0.010][i][cplayer]     --demuxer-lavf-o-append
+[   0.010][i][cplayer]     --demuxer-lavf-o-clr
+[   0.010][i][cplayer]     --demuxer-lavf-o-del
+[   0.010][i][cplayer]     --demuxer-lavf-o-set
+[   0.010][i][cplayer]     --demuxer-lavf-o-remove
+[   0.010][i][cplayer]  --demuxer-lavf-probe-info        Choices: no yes auto nostreams (default: auto)
+[   0.010][i][cplayer]  --demuxer-lavf-probescore        Integer (1 to 100) (default: 26)
+[   0.010][i][cplayer]  --demuxer-lavf-probesize         Integer (32 to 2147483647) (default: 0)
+[   0.010][i][cplayer]  --demuxer-lavf-propagate-opts    Flag (default: yes)
+[   0.010][i][cplayer]  --demuxer-max-back-bytes         ByteSize (0 to 4.6116860184274e+18) (default: 50.000 MiB)
+[   0.010][i][cplayer]  --demuxer-max-bytes              ByteSize (0 to 4.6116860184274e+18) (default: 150.000 MiB)
+[   0.010][i][cplayer]  --demuxer-mkv-crop-compat        Flag (default: yes)
+[   0.010][i][cplayer]  --demuxer-mkv-probe-start-time   Flag (default: yes)
+[   0.010][i][cplayer]  --demuxer-mkv-probe-video-duration Choices: no yes full (default: no)
+[   0.010][i][cplayer]  --demuxer-mkv-subtitle-preroll   Choices: no yes index (default: index)
+[   0.010][i][cplayer]  --demuxer-mkv-subtitle-preroll-secs Double (0 to any) (default: 1)
+[   0.010][i][cplayer]  --demuxer-mkv-subtitle-preroll-secs-index Double (0 to any) (default: 10)
+[   0.010][i][cplayer]  --demuxer-rawaudio-channels      Audio channels or channel map (default: stereo)
+[   0.010][i][cplayer]  --demuxer-rawaudio-format        Choices: u8 s8 u16le u16be s16le s16be u24le u24be s24le s24be u32le u32be s32le s32be floatle floatbe doublele doublebe u16 s16 u24 s24 u32 s32 float double (default: s16le)
+[   0.010][i][cplayer]  --demuxer-rawaudio-rate          Integer (1000 to 384000) (default: 44100)
+[   0.010][i][cplayer]  --demuxer-rawvideo-codec         String (default: )
+[   0.011][i][cplayer]  --demuxer-rawvideo-format        FourCC (default: 30323449)
+[   0.011][i][cplayer]  --demuxer-rawvideo-fps           Float (0.001 to 1000) (default: 25)
+[   0.011][i][cplayer]  --demuxer-rawvideo-h             Integer (1 to 8192) (default: 720)
+[   0.011][i][cplayer]  --demuxer-rawvideo-mp-format     Image format (default: no)
+[   0.011][i][cplayer]  --demuxer-rawvideo-size          Integer (1 to 268435456) (default: 0)
+[   0.011][i][cplayer]  --demuxer-rawvideo-w             Integer (1 to 8192) (default: 1280)
+[   0.011][i][cplayer]  --demuxer-readahead-secs         Double (0 to any) (default: 1)
+[   0.011][i][cplayer]  --demuxer-sbr-probesize          Integer (32 to 2147483647) (default: 128)
+[   0.011][i][cplayer]  --demuxer-seekable-cache         Choices: auto no yes (default: auto)
+[   0.011][i][cplayer]  --demuxer-termination-timeout    Double (default: 0.1)
+[   0.011][i][cplayer]  --demuxer-thread                 Flag (default: yes)
+[   0.011][i][cplayer]  --directory-filter-types         String list (default: video,audio,image,archive,playlist)
+[   0.011][i][cplayer]     --directory-filter-types-add
+[   0.011][i][cplayer]     --directory-filter-types-append
+[   0.011][i][cplayer]     --directory-filter-types-clr
+[   0.011][i][cplayer]     --directory-filter-types-del
+[   0.011][i][cplayer]     --directory-filter-types-pre
+[   0.011][i][cplayer]     --directory-filter-types-set
+[   0.011][i][cplayer]     --directory-filter-types-toggle
+[   0.011][i][cplayer]     --directory-filter-types-remove
+[   0.011][i][cplayer]  --directory-mode                 Choices: auto lazy recursive ignore (default: auto)
+[   0.011][i][cplayer]  --display-fps-override           Double (0 to any) (default: 0)
+[   0.011][i][cplayer]  --display-tags                   String list (default: Artist,Album,Album_Artist,Comment,Composer,Date,Description,Genre,Performer,Rating,Series,Title,Track,icy-title,service_name,Uploader,Channel_URL)
+[   0.011][i][cplayer]     --display-tags-add
+[   0.011][i][cplayer]     --display-tags-append
+[   0.011][i][cplayer]     --display-tags-clr
+[   0.011][i][cplayer]     --display-tags-del
+[   0.011][i][cplayer]     --display-tags-pre
+[   0.011][i][cplayer]     --display-tags-set
+[   0.011][i][cplayer]     --display-tags-toggle
+[   0.011][i][cplayer]     --display-tags-remove
+[   0.011][i][cplayer]  --dither                         Choices: fruit ordered error-diffusion no (default: fruit)
+[   0.011][i][cplayer]  --dither-depth                   Choices: no auto (or an integer) (-1 to 16) (default: auto)
+[   0.011][i][cplayer]  --dither-size-fruit              Integer (2 to 8) (default: 6)
+[   0.011][i][cplayer]  --drag-and-drop                  Choices: no auto replace append insert-next (default: auto)
+[   0.011][i][cplayer]  --dscale                         Choices:  bilinear bicubic_fast oversample spline16 spline36 spline64 sinc lanczos ginseng bicubic hermite catmull_rom mitchell robidoux robidouxsharp box nearest triangle gaussian jinc ewa_lanczos ewa_hanning ewa_ginseng ewa_lanczossharp ewa_lanczos4sharpest ewa_lanczossoft haasnsoft ewa_robidoux ewa_robidouxsharp bartlett cosine hanning tukey hamming quadric welch kaiser blackman sphinx (default: hermite)
+[   0.011][i][cplayer]  --dscale-antiring                Float (0 to 1) (default: 0)
+[   0.011][i][cplayer]  --dscale-blur                    Float (default: 0)
+[   0.011][i][cplayer]  --dscale-clamp                   Float (0 to 1) (default: 0)
+[   0.011][i][cplayer]  --dscale-param1                  Float (default: default)
+[   0.011][i][cplayer]  --dscale-param2                  Float (default: default)
+[   0.011][i][cplayer]  --dscale-radius                  Float (0.5 to 16) (default: 0)
+[   0.011][i][cplayer]  --dscale-taper                   Float (0 to 1) (default: 0)
+[   0.011][i][cplayer]  --dscale-window                  Choices:  bartlett cosine hanning tukey hamming quadric welch kaiser blackman sphinx jinc (default: )
+[   0.011][i][cplayer]  --dscale-wparam                  Float (default: default)
+[   0.011][i][cplayer]  --dscale-wtaper                  Float (0 to 1) (default: 0)
+[   0.011][i][cplayer]  --dump-stats                     String (default: ) [file]
+[   0.011][i][cplayer]  --dvd-angle                      Integer (1 to 99) (default: 1)
+[   0.011][i][cplayer]  --dvd-device                     String (default: ) [file]
+[   0.011][i][cplayer]  --dvd-speed                      Integer (default: 0)
+[   0.011][i][cplayer]  --edition                        Choices: auto (or an integer) (0 to 8190) (default: auto)
+[   0.011][i][cplayer]  --egl-config-id                  Integer (default: 0)
+[   0.011][i][cplayer]  --egl-output-format              Choices: auto rgb8 rgba8 rgb10 rgb10_a2 rgb16 rgba16 rgb16f rgba16f rgb32f rgba32f (default: auto)
+[   0.011][i][cplayer]  --embeddedfonts                  Flag (default: yes)
+[   0.011][i][cplayer]  --end                            Relative time or percent position (default: none)
+[   0.011][i][cplayer]  --error-diffusion                String (default: sierra-lite)
+[   0.011][i][cplayer]  --external-file                  alias for --external-files-append (CLI/config files only)
+[   0.011][i][cplayer]  --external-files                 String list (default: ) [file]
+[   0.011][i][cplayer]     --external-files-add
+[   0.011][i][cplayer]     --external-files-append
+[   0.011][i][cplayer]     --external-files-clr
+[   0.011][i][cplayer]     --external-files-del
+[   0.011][i][cplayer]     --external-files-pre
+[   0.011][i][cplayer]     --external-files-set
+[   0.011][i][cplayer]     --external-files-toggle
+[   0.011][i][cplayer]     --external-files-remove
+[   0.011][i][cplayer]  --fbo-format                     String (default: auto)
+[   0.011][i][cplayer]  --focus-on                       Choices: never open all (default: open)
+[   0.011][i][cplayer]  --focus-on-open                  removed [deprecated]
+[   0.011][i][cplayer]  --force-media-title              String (default: )
+[   0.011][i][cplayer]  --force-render                   Flag (default: no)
+[   0.011][i][cplayer]  --force-rgba-osd-rendering       Flag (default: no)
+[   0.011][i][cplayer]  --force-seekable                 Flag (default: no)
+[   0.011][i][cplayer]  --force-window                   Choices: no yes immediate (default: no)
+[   0.011][i][cplayer]  --force-window-position          Flag (default: no)
+[   0.011][i][cplayer]  --framedrop                      Choices: no vo decoder decoder+vo (default: vo)
+[   0.011][i][cplayer]  --frames                         Choices: all (or an integer) (0 to 2147483647) (default: all)
+[   0.011][i][cplayer]  --fs                             alias for fullscreen
+[   0.011][i][cplayer]  --fs-screen                      Choices: all current (or an integer) (0 to 32) (default: current)
+[   0.011][i][cplayer]  --fs-screen-name                 String (default: )
+[   0.011][i][cplayer]  --fullscreen                     Flag (default: no)
+[   0.011][i][cplayer]  --gamma                          Float (-100 to 100) (default: 0)
+[   0.011][i][cplayer]  --gamma-auto                     Flag (default: no) [deprecated]
+[   0.011][i][cplayer]  --gamma-factor                   Float (0.1 to 2) (default: 1)
+[   0.011][i][cplayer]  --gamut-clipping                 removed [deprecated]
+[   0.011][i][cplayer]  --gamut-mapping-mode             Choices: auto clip perceptual relative saturation absolute desaturate darken warn linear (default: auto)
+[   0.011][i][cplayer]  --gamut-warning                  removed [deprecated]
+[   0.011][i][cplayer]  --gapless-audio                  Choices: no yes weak (default: weak)
+[   0.011][i][cplayer]  --geometry                       Window geometry (default: )
+[   0.011][i][cplayer]  --glsl-shader                    alias for --glsl-shaders-append (CLI/config files only)
+[   0.011][i][cplayer]  --glsl-shader-opts               Key/value list (default: )
+[   0.011][i][cplayer]     --glsl-shader-opts-add
+[   0.011][i][cplayer]     --glsl-shader-opts-append
+[   0.011][i][cplayer]     --glsl-shader-opts-clr
+[   0.011][i][cplayer]     --glsl-shader-opts-del
+[   0.011][i][cplayer]     --glsl-shader-opts-set
+[   0.011][i][cplayer]     --glsl-shader-opts-remove
+[   0.011][i][cplayer]  --glsl-shaders                   String list (default: ) [file]
+[   0.011][i][cplayer]     --glsl-shaders-add
+[   0.011][i][cplayer]     --glsl-shaders-append
+[   0.011][i][cplayer]     --glsl-shaders-clr
+[   0.011][i][cplayer]     --glsl-shaders-del
+[   0.011][i][cplayer]     --glsl-shaders-pre
+[   0.011][i][cplayer]     --glsl-shaders-set
+[   0.011][i][cplayer]     --glsl-shaders-toggle
+[   0.011][i][cplayer]     --glsl-shaders-remove
+[   0.011][i][cplayer]  --gpu-api                        Object settings list (default: )
+[   0.011][i][cplayer]     --gpu-api-add
+[   0.011][i][cplayer]     --gpu-api-append
+[   0.011][i][cplayer]     --gpu-api-clr
+[   0.011][i][cplayer]     --gpu-api-help
+[   0.011][i][cplayer]     --gpu-api-pre
+[   0.011][i][cplayer]     --gpu-api-set
+[   0.011][i][cplayer]     --gpu-api-toggle
+[   0.011][i][cplayer]     --gpu-api-remove
+[   0.011][i][cplayer]  --gpu-context                    Object settings list (default: )
+[   0.011][i][cplayer]     --gpu-context-add
+[   0.011][i][cplayer]     --gpu-context-append
+[   0.011][i][cplayer]     --gpu-context-clr
+[   0.011][i][cplayer]     --gpu-context-help
+[   0.011][i][cplayer]     --gpu-context-pre
+[   0.011][i][cplayer]     --gpu-context-set
+[   0.011][i][cplayer]     --gpu-context-toggle
+[   0.011][i][cplayer]     --gpu-context-remove
+[   0.011][i][cplayer]  --gpu-debug                      Flag (default: no)
+[   0.011][i][cplayer]  --gpu-dumb-mode                  Choices: auto yes no (default: auto)
+[   0.011][i][cplayer]  --gpu-hwdec-interop              String (default: auto)
+[   0.011][i][cplayer]  --gpu-shader-cache               Flag (default: yes)
+[   0.011][i][cplayer]  --gpu-shader-cache-dir           String (default: ) [file]
+[   0.011][i][cplayer]  --gpu-sw                         Flag (default: no)
+[   0.011][i][cplayer]  --gpu-tex-pad-x                  Integer (0 to 4096) (default: 0)
+[   0.011][i][cplayer]  --gpu-tex-pad-y                  Integer (0 to 4096) (default: 0)
+[   0.011][i][cplayer]  --h                              String (default: ) [not in config files]
+[   0.011][i][cplayer]  --hdr-compute-peak               Choices: auto yes no (default: auto)
+[   0.011][i][cplayer]  --hdr-contrast-recovery          Float (0 to 2) (default: 0)
+[   0.011][i][cplayer]  --hdr-contrast-smoothness        Float (1 to 100) (default: 3.5)
+[   0.011][i][cplayer]  --hdr-peak-decay-rate            Float (0 to 1000) (default: 20)
+[   0.011][i][cplayer]  --hdr-peak-percentile            Float (0 to 100) (default: 0)
+[   0.011][i][cplayer]  --hdr-reference-white            Choices: auto (or an integer) (10 to 10000) (default: auto)
+[   0.011][i][cplayer]  --hdr-scene-threshold-high       Float (0 to 20) (default: 3)
+[   0.011][i][cplayer]  --hdr-scene-threshold-low        Float (0 to 20) (default: 1)
+[   0.011][i][cplayer]  --help                           String (default: ) [not in config files]
+[   0.011][i][cplayer]  --hidpi-window-scale             Flag (default: no)
+[   0.011][i][cplayer]  --hls-bitrate                    Choices: no min max (or an integer) (0 to 2147483647) (default: max)
+[   0.011][i][cplayer]  --hr-seek                        Choices: no absolute yes always default (default: default)
+[   0.011][i][cplayer]  --hr-seek-demuxer-offset         Float (default: 0)
+[   0.011][i][cplayer]  --hr-seek-framedrop              Flag (default: yes)
+[   0.011][i][cplayer]  --http-header-fields             String list (default: )
+[   0.011][i][cplayer]     --http-header-fields-add
+[   0.011][i][cplayer]     --http-header-fields-append
+[   0.011][i][cplayer]     --http-header-fields-clr
+[   0.011][i][cplayer]     --http-header-fields-del
+[   0.011][i][cplayer]     --http-header-fields-pre
+[   0.011][i][cplayer]     --http-header-fields-set
+[   0.011][i][cplayer]     --http-header-fields-toggle
+[   0.011][i][cplayer]     --http-header-fields-remove
+[   0.011][i][cplayer]  --http-proxy                     String (default: )
+[   0.011][i][cplayer]  --hue                            Float (-100 to 100) (default: 0)
+[   0.011][i][cplayer]  --hwdec                          String list (default: no)
+[   0.011][i][cplayer]     --hwdec-add
+[   0.011][i][cplayer]     --hwdec-append
+[   0.011][i][cplayer]     --hwdec-clr
+[   0.011][i][cplayer]     --hwdec-del
+[   0.011][i][cplayer]     --hwdec-pre
+[   0.011][i][cplayer]     --hwdec-set
+[   0.011][i][cplayer]     --hwdec-toggle
+[   0.011][i][cplayer]     --hwdec-remove
+[   0.011][i][cplayer]  --hwdec-codecs                   String (default: h264,vc1,hevc,vp8,vp9,av1,prores,prores_raw,ffv1,dpx)
+[   0.011][i][cplayer]  --hwdec-extra-frames             Integer (0 to 256) (default: 6)
+[   0.011][i][cplayer]  --hwdec-image-format             Image format (default: no)
+[   0.011][i][cplayer]  --hwdec-software-fallback        Choices: no yes (or an integer) (1 to 2147483647) (default: 3)
+[   0.011][i][cplayer]  --hwdec-threads                  Integer (0 to any) (default: 4)
+[   0.011][i][cplayer]  --icc-3dlut-size                 String (default: auto)
+[   0.011][i][cplayer]  --icc-cache                      Flag (default: yes)
+[   0.011][i][cplayer]  --icc-cache-dir                  String (default: ) [file]
+[   0.011][i][cplayer]  --icc-force-contrast             Choices: no inf (or an integer) (0 to 1000000) (default: no)
+[   0.011][i][cplayer]  --icc-intent                     Integer (default: 1)
+[   0.011][i][cplayer]  --icc-profile                    String (default: ) [file]
+[   0.011][i][cplayer]  --icc-profile-auto               Flag (default: no)
+[   0.011][i][cplayer]  --icc-use-luma                   Flag (default: no)
+[   0.011][i][cplayer]  --idle                           Choices: no once yes (default: no)
+[   0.011][i][cplayer]  --ignore-path-in-watch-later-config Flag (default: no)
+[   0.011][i][cplayer]  --image-display-duration         Double (0 to inf) (default: 5)
+[   0.011][i][cplayer]  --image-exts                     String list (default: avif,bmp,gif,heic,heif,j2k,jp2,jpeg,jpg,jxl,png,qoi,svg,tga,tif,tiff,webp)
+[   0.011][i][cplayer]     --image-exts-add
+[   0.011][i][cplayer]     --image-exts-append
+[   0.011][i][cplayer]     --image-exts-clr
+[   0.011][i][cplayer]     --image-exts-del
+[   0.011][i][cplayer]     --image-exts-pre
+[   0.011][i][cplayer]     --image-exts-set
+[   0.011][i][cplayer]     --image-exts-toggle
+[   0.011][i][cplayer]     --image-exts-remove
+[   0.011][i][cplayer]  --image-lut                      String (default: ) [file]
+[   0.011][i][cplayer]  --image-lut-type                 Choices: auto native normalized conversion (default: auto)
+[   0.011][i][cplayer]  --image-subs-hdr-peak            Choices: sdr video (or an integer) (10 to 10000) (default: sdr)
+[   0.011][i][cplayer]  --image-subs-video-resolution    Flag (default: no)
+[   0.011][i][cplayer]  --include                        String (default: ) [file]
+[   0.011][i][cplayer]  --index                          Choices: default recreate (default: default)
+[   0.011][i][cplayer]  --initial-audio-sync             Flag (default: yes)
+[   0.011][i][cplayer]  --input-ar-delay                 Integer (default: 200)
+[   0.011][i][cplayer]  --input-ar-rate                  Integer (default: 40)
+[   0.011][i][cplayer]  --input-builtin-bindings         Flag (default: yes)
+[   0.011][i][cplayer]  --input-builtin-dragging         Flag (default: yes)
+[   0.011][i][cplayer]  --input-cmdlist                  Print [not in config files]
+[   0.011][i][cplayer]  --input-commands                 String list (default: )
+[   0.011][i][cplayer]     --input-commands-add
+[   0.011][i][cplayer]     --input-commands-append
+[   0.011][i][cplayer]     --input-commands-clr
+[   0.011][i][cplayer]     --input-commands-del
+[   0.011][i][cplayer]     --input-commands-pre
+[   0.011][i][cplayer]     --input-commands-set
+[   0.011][i][cplayer]     --input-commands-toggle
+[   0.011][i][cplayer]     --input-commands-remove
+[   0.011][i][cplayer]  --input-conf                     String (default: ) [file]
+[   0.011][i][cplayer]  --input-cursor                   Flag (default: yes)
+[   0.011][i][cplayer]  --input-cursor-passthrough       Flag (default: no)
+[   0.011][i][cplayer]  --input-default-bindings         Flag (default: yes)
+[   0.011][i][cplayer]  --input-doubleclick-time         Integer (0 to 1000) (default: 300)
+[   0.011][i][cplayer]  --input-dragging-deadzone        Integer (default: 3)
+[   0.011][i][cplayer]  --input-gamepad                  Flag (default: no)
+[   0.011][i][cplayer]  --input-ime                      Flag (default: no)
+[   0.011][i][cplayer]  --input-ipc-client               String (default: )
+[   0.011][i][cplayer]  --input-ipc-server               String (default: ) [file]
+[   0.011][i][cplayer]  --input-key-fifo-size            Integer (2 to 65000) (default: 7)
+[   0.011][i][cplayer]  --input-keylist                  Print [not in config files]
+[   0.012][i][cplayer]  --input-media-keys               Flag (default: yes)
+[   0.012][i][cplayer]  --input-preprocess-wheel         Flag (default: yes)
+[   0.012][i][cplayer]  --input-right-alt-gr             Flag (default: yes)
+[   0.012][i][cplayer]  --input-tablet-emulate-mouse     Flag (default: yes)
+[   0.012][i][cplayer]  --input-terminal                 Flag (default: yes)
+[   0.012][i][cplayer]  --input-test                     Flag (default: no)
+[   0.012][i][cplayer]  --input-touch-emulate-mouse      Flag (default: yes)
+[   0.012][i][cplayer]  --input-vo-keyboard              Flag (default: yes)
+[   0.012][i][cplayer]  --interpolation                  Flag (default: no)
+[   0.012][i][cplayer]  --interpolation-preserve         Flag (default: yes)
+[   0.012][i][cplayer]  --interpolation-threshold        Float (default: 0.01)
+[   0.012][i][cplayer]  --inverse-tone-mapping           Flag (default: no)
+[   0.012][i][cplayer]  --js-memory-report               Flag (default: no)
+[   0.012][i][cplayer]  --keep-open                      Choices: no yes always (default: no)
+[   0.012][i][cplayer]  --keep-open-pause                Flag (default: yes)
+[   0.012][i][cplayer]  --keepaspect                     Flag (default: yes)
+[   0.012][i][cplayer]  --keepaspect-window              Flag (default: yes)
+[   0.012][i][cplayer]  --lavfi-complex                  String (default: )
+[   0.012][i][cplayer]  --length                         Relative time or percent position (default: none)
+[   0.012][i][cplayer]  --libplacebo-opts                Key/value list (default: )
+[   0.012][i][cplayer]     --libplacebo-opts-add
+[   0.012][i][cplayer]     --libplacebo-opts-append
+[   0.012][i][cplayer]     --libplacebo-opts-clr
+[   0.012][i][cplayer]     --libplacebo-opts-del
+[   0.012][i][cplayer]     --libplacebo-opts-set
+[   0.012][i][cplayer]     --libplacebo-opts-remove
+[   0.012][i][cplayer]  --linear-downscaling             Flag (default: yes)
+[   0.012][i][cplayer]  --linear-upscaling               Flag (default: no)
+[   0.012][i][cplayer]  --list-options                   Flag [not in config files]
+[   0.012][i][cplayer]  --list-properties                Flag (default: no) [not in config files]
+[   0.012][i][cplayer]  --list-protocols                 Print [not in config files]
+[   0.012][i][cplayer]  --load-auto-profiles             Choices: no yes auto (default: auto)
+[   0.012][i][cplayer]  --load-commands                  Flag (default: yes)
+[   0.012][i][cplayer]  --load-console                   Flag (default: yes)
+[   0.012][i][cplayer]  --load-context-menu              Flag (default: no)
+[   0.012][i][cplayer]  --load-osd-console               alias [deprecated] for load-console
+[   0.012][i][cplayer]  --load-positioning               Flag (default: yes)
+[   0.012][i][cplayer]  --load-scripts                   Flag (default: yes)
+[   0.012][i][cplayer]  --load-select                    Flag (default: yes)
+[   0.012][i][cplayer]  --load-stats-overlay             Flag (default: yes)
+[   0.012][i][cplayer]  --load-unsafe-playlists          Flag (default: no)
+[   0.012][i][cplayer]  --log-file                       String (default: ) [file]
+[   0.012][i][cplayer]  --loop                           alias for loop-file
+[   0.012][i][cplayer]  --loop-file                      Choices: no inf yes (or an integer) (0 to 10000) (default: no)
+[   0.012][i][cplayer]  --loop-playlist                  Choices: no inf yes force (or an integer) (1 to 10000) (default: no)
+[   0.012][i][cplayer]  --lut                            String (default: ) [file]
+[   0.012][i][cplayer]  --lut-type                       Choices: auto native normalized conversion (default: auto)
+[   0.012][i][cplayer]  --mc                             Float (0 to 100) (default: -1)
+[   0.012][i][cplayer]  --media-controls                 Flag (default: yes)
+[   0.012][i][cplayer]  --merge-files                    Flag (default: no)
+[   0.012][i][cplayer]  --metadata-codepage              String (default: auto)
+[   0.012][i][cplayer]  --mf-fps                         Double (default: 1)
+[   0.012][i][cplayer]  --mf-type                        String (default: )
+[   0.012][i][cplayer]  --monitoraspect                  Float (0 to 9) (default: 0)
+[   0.012][i][cplayer]  --monitorpixelaspect             Float (0.03125 to 32) (default: 1)
+[   0.012][i][cplayer]  --msg-color                      Flag (default: yes)
+[   0.012][i][cplayer]  --msg-level                      Output verbosity levels (default: )
+[   0.012][i][cplayer]  --msg-module                     Flag (default: no)
+[   0.012][i][cplayer]  --msg-time                       Flag (default: no)
+[   0.012][i][cplayer]  --mute                           Flag (default: no)
+[   0.012][i][cplayer]  --native-fs                      Flag (default: yes)
+[   0.012][i][cplayer]  --native-keyrepeat               Flag (default: no)
+[   0.012][i][cplayer]  --native-touch                   Flag (default: no)
+[   0.012][i][cplayer]  --network-timeout                Double (0 to any) (default: 60)
+[   0.012][i][cplayer]  --o                              String (default: ) [not in config files] [file]
+[   0.012][i][cplayer]  --oac                            String (default: )
+[   0.012][i][cplayer]  --oacopts                        Key/value list (default: )
+[   0.012][i][cplayer]     --oacopts-add
+[   0.012][i][cplayer]     --oacopts-append
+[   0.012][i][cplayer]     --oacopts-clr
+[   0.012][i][cplayer]     --oacopts-del
+[   0.012][i][cplayer]     --oacopts-set
+[   0.012][i][cplayer]     --oacopts-remove
+[   0.012][i][cplayer]  --ocopy-metadata                 Flag (default: yes)
+[   0.012][i][cplayer]  --of                             String (default: )
+[   0.012][i][cplayer]  --ofopts                         Key/value list (default: )
+[   0.012][i][cplayer]     --ofopts-add
+[   0.012][i][cplayer]     --ofopts-append
+[   0.012][i][cplayer]     --ofopts-clr
+[   0.012][i][cplayer]     --ofopts-del
+[   0.012][i][cplayer]     --ofopts-set
+[   0.012][i][cplayer]     --ofopts-remove
+[   0.012][i][cplayer]  --on-all-workspaces              Flag (default: no)
+[   0.012][i][cplayer]  --ontop                          Flag (default: no)
+[   0.012][i][cplayer]  --ontop-level                    Choices: window system desktop (or an integer) (0 to 2147483647) (default: window)
+[   0.012][i][cplayer]  --openal-direct-channels         Flag (default: yes)
+[   0.012][i][cplayer]  --openal-num-buffers             Integer (2 to 128) (default: 4)
+[   0.012][i][cplayer]  --openal-num-samples             Integer (256 to 32768) (default: 8192)
+[   0.012][i][cplayer]  --opengl-check-pattern-a         Integer (default: 0)
+[   0.012][i][cplayer]  --opengl-check-pattern-b         Integer (default: 0)
+[   0.012][i][cplayer]  --opengl-dwmflush                Choices: no auto windowed yes (default: auto)
+[   0.012][i][cplayer]  --opengl-early-flush             Choices: no yes auto (default: no)
+[   0.012][i][cplayer]  --opengl-es                      Choices: auto yes no (default: auto)
+[   0.012][i][cplayer]  --opengl-glfinish                Flag (default: no)
+[   0.012][i][cplayer]  --opengl-pbo                     Flag (default: no)
+[   0.012][i][cplayer]  --opengl-rectangle-textures      Flag (default: no)
+[   0.012][i][cplayer]  --opengl-swapinterval            Integer (default: 1)
+[   0.012][i][cplayer]  --opengl-waitvsync               Flag (default: no)
+[   0.012][i][cplayer]  --orawts                         Flag (default: no)
+[   0.012][i][cplayer]  --ordered-chapters               Flag (default: yes)
+[   0.012][i][cplayer]  --ordered-chapters-files         String (default: ) [file]
+[   0.012][i][cplayer]  --oremove-metadata               String list (default: )
+[   0.012][i][cplayer]     --oremove-metadata-add
+[   0.012][i][cplayer]     --oremove-metadata-append
+[   0.012][i][cplayer]     --oremove-metadata-clr
+[   0.012][i][cplayer]     --oremove-metadata-del
+[   0.012][i][cplayer]     --oremove-metadata-pre
+[   0.012][i][cplayer]     --oremove-metadata-set
+[   0.012][i][cplayer]     --oremove-metadata-toggle
+[   0.012][i][cplayer]     --oremove-metadata-remove
+[   0.012][i][cplayer]  --osc                            Flag (default: yes)
+[   0.012][i][cplayer]  --osd-align-x                    Choices: left center right (default: left)
+[   0.012][i][cplayer]  --osd-align-y                    Choices: top center bottom (default: top)
+[   0.012][i][cplayer]  --osd-back-color                 Color (default: #AF000000)
+[   0.012][i][cplayer]  --osd-bar                        Flag (default: yes)
+[   0.012][i][cplayer]  --osd-bar-align-x                Float (-1 to 1) (default: 0)
+[   0.012][i][cplayer]  --osd-bar-align-y                Float (-1 to 1) (default: 0.5)
+[   0.012][i][cplayer]  --osd-bar-border-size            alias for osd-bar-outline-size
+[   0.012][i][cplayer]  --osd-bar-h                      Float (0.1 to 50) (default: 3.125)
+[   0.012][i][cplayer]  --osd-bar-marker-min-size        Float (0 to 1000) (default: 1.6)
+[   0.012][i][cplayer]  --osd-bar-marker-scale           Float (0 to 100) (default: 1.3)
+[   0.012][i][cplayer]  --osd-bar-marker-style           Choices: none triangle line (default: triangle)
+[   0.012][i][cplayer]  --osd-bar-outline-size           Float (0 to 1000) (default: 0.5)
+[   0.012][i][cplayer]  --osd-bar-w                      Float (1 to 100) (default: 75)
+[   0.012][i][cplayer]  --osd-bitmap-max-size            Integer (default: 0)
+[   0.012][i][cplayer]  --osd-blur                       Float (0 to 20) (default: 0)
+[   0.012][i][cplayer]  --osd-bold                       Flag (default: no)
+[   0.012][i][cplayer]  --osd-border-color               alias for osd-outline-color
+[   0.012][i][cplayer]  --osd-border-size                alias for osd-outline-size
+[   0.012][i][cplayer]  --osd-border-style               Choices: outline-and-shadow opaque-box background-box (default: outline-and-shadow)
+[   0.012][i][cplayer]  --osd-color                      Color (default: #FFFFFFFF)
+[   0.012][i][cplayer]  --osd-duration                   Integer (0 to 3600000) (default: 1000)
+[   0.012][i][cplayer]  --osd-font                       String (default: sans-serif)
+[   0.012][i][cplayer]  --osd-font-provider              Choices: auto none fontconfig (default: auto)
+[   0.012][i][cplayer]  --osd-font-size                  Float (1 to 9000) (default: 30)
+[   0.012][i][cplayer]  --osd-fonts-dir                  String (default: ) [file]
+[   0.012][i][cplayer]  --osd-fractions                  Flag (default: no)
+[   0.012][i][cplayer]  --osd-glyph-limit                Integer (default: 0)
+[   0.012][i][cplayer]  --osd-italic                     Flag (default: no)
+[   0.012][i][cplayer]  --osd-justify                    Choices: auto left center right (default: auto)
+[   0.012][i][cplayer]  --osd-level                      Choices: 0 1 2 3 (default: 1)
+[   0.012][i][cplayer]  --osd-margin-x                   Integer (0 to 2147483647) (default: 16)
+[   0.012][i][cplayer]  --osd-margin-y                   Integer (0 to 2147483647) (default: 16)
+[   0.012][i][cplayer]  --osd-margin-y-offset            Integer (default: 0)
+[   0.012][i][cplayer]  --osd-msg1                       String (default: )
+[   0.012][i][cplayer]  --osd-msg2                       String (default: )
+[   0.012][i][cplayer]  --osd-msg3                       String (default: )
+[   0.012][i][cplayer]  --osd-on-seek                    Choices: no bar msg msg-bar (default: bar)
+[   0.012][i][cplayer]  --osd-outline-color              Color (default: #FF000000)
+[   0.012][i][cplayer]  --osd-outline-size               Float (default: 1.65)
+[   0.012][i][cplayer]  --osd-playing-msg                String (default: )
+[   0.012][i][cplayer]  --osd-playing-msg-duration       Integer (0 to 3600000) (default: 0)
+[   0.012][i][cplayer]  --osd-playlist-entry             Choices: title filename both (default: title)
+[   0.012][i][cplayer]  --osd-prune-delay                Double (-1 to 10000) (default: -1)
+[   0.012][i][cplayer]  --osd-scale                      Float (0 to 100) (default: 1)
+[   0.012][i][cplayer]  --osd-scale-by-window            Flag (default: yes)
+[   0.012][i][cplayer]  --osd-selected-color             Color (default: #FFFABD2F)
+[   0.012][i][cplayer]  --osd-selected-outline-color     Color (default: #FF000000)
+[   0.013][i][cplayer]  --osd-shadow-color               alias for osd-back-color
+[   0.013][i][cplayer]  --osd-shadow-offset              Float (default: 0)
+[   0.013][i][cplayer]  --osd-shaper                     Choices: simple complex (default: complex)
+[   0.013][i][cplayer]  --osd-spacing                    Float (-10 to 10) (default: 0)
+[   0.013][i][cplayer]  --osd-status-msg                 String (default: )
+[   0.013][i][cplayer]  --oset-metadata                  Key/value list (default: )
+[   0.013][i][cplayer]     --oset-metadata-add
+[   0.013][i][cplayer]     --oset-metadata-append
+[   0.013][i][cplayer]     --oset-metadata-clr
+[   0.013][i][cplayer]     --oset-metadata-del
+[   0.013][i][cplayer]     --oset-metadata-set
+[   0.013][i][cplayer]     --oset-metadata-remove
+[   0.013][i][cplayer]  --ovc                            String (default: )
+[   0.013][i][cplayer]  --ovcopts                        Key/value list (default: )
+[   0.013][i][cplayer]     --ovcopts-add
+[   0.013][i][cplayer]     --ovcopts-append
+[   0.013][i][cplayer]     --ovcopts-clr
+[   0.013][i][cplayer]     --ovcopts-del
+[   0.013][i][cplayer]     --ovcopts-set
+[   0.013][i][cplayer]     --ovcopts-remove
+[   0.013][i][cplayer]  --override-display-fps           alias [deprecated] for display-fps-override
+[   0.013][i][cplayer]  --panscan                        Float (0 to 1) (default: 0)
+[   0.013][i][cplayer]  --pause                          Flag (default: no)
+[   0.013][i][cplayer]  --pitch                          Double (0.01 to 100) (default: 1)
+[   0.013][i][cplayer]  --play-dir                       alias [deprecated] for play-direction
+[   0.013][i][cplayer]  --play-direction                 Choices: forward + backward - (default: forward)
+[   0.013][i][cplayer]  --player-operation-mode          Choices: cplayer pseudo-gui (default: cplayer)
+[   0.013][i][cplayer]  --playlist                       String (default: ) [not in config files] [file]
+[   0.013][i][cplayer]  --playlist-exts                  String list (default: cue,edl,m3u,m3u8,pls)
+[   0.013][i][cplayer]     --playlist-exts-add
+[   0.013][i][cplayer]     --playlist-exts-append
+[   0.013][i][cplayer]     --playlist-exts-clr
+[   0.013][i][cplayer]     --playlist-exts-del
+[   0.013][i][cplayer]     --playlist-exts-pre
+[   0.013][i][cplayer]     --playlist-exts-set
+[   0.013][i][cplayer]     --playlist-exts-toggle
+[   0.013][i][cplayer]     --playlist-exts-remove
+[   0.013][i][cplayer]  --playlist-start                 Choices: auto no (or an integer) (0 to 2147483647) (default: auto)
+[   0.013][i][cplayer]  --prefetch-playlist              Flag (default: no)
+[   0.013][i][cplayer]  --priority                       Choices: no realtime high abovenormal normal belownormal idle (default: no)
+[   0.013][i][cplayer]  --profile                        String list (default: )
+[   0.013][i][cplayer]     --profile-add
+[   0.013][i][cplayer]     --profile-append
+[   0.013][i][cplayer]     --profile-clr
+[   0.013][i][cplayer]     --profile-del
+[   0.013][i][cplayer]     --profile-pre
+[   0.013][i][cplayer]     --profile-set
+[   0.013][i][cplayer]     --profile-toggle
+[   0.013][i][cplayer]     --profile-remove
+[   0.013][i][cplayer]  --quiet                          Flag (default: no)
+[   0.013][i][cplayer]  --rar-list-all-volumes           Flag (default: no)
+[   0.013][i][cplayer]  --really-quiet                   Flag (default: no)
+[   0.013][i][cplayer]  --rebase-start-time              Flag (default: yes)
+[   0.013][i][cplayer]  --referrer                       String (default: )
+[   0.013][i][cplayer]  --register                       Flag (default: no)
+[   0.013][i][cplayer]  --register-rpath                 String (default: )
+[   0.013][i][cplayer]  --replaygain                     Choices: no track album (default: no)
+[   0.013][i][cplayer]  --replaygain-clip                Flag (default: no)
+[   0.013][i][cplayer]  --replaygain-fallback            Float (-200 to 60) (default: 0)
+[   0.013][i][cplayer]  --replaygain-preamp              Float (-150 to 150) (default: 0)
+[   0.013][i][cplayer]  --reset-on-next-file             String list (default: )
+[   0.013][i][cplayer]     --reset-on-next-file-add
+[   0.013][i][cplayer]     --reset-on-next-file-append
+[   0.013][i][cplayer]     --reset-on-next-file-clr
+[   0.013][i][cplayer]     --reset-on-next-file-del
+[   0.016][i][cplayer]     --reset-on-next-file-pre
+[   0.019][i][cplayer]     --reset-on-next-file-set
+[   0.021][i][cplayer]     --reset-on-next-file-toggle
+[   0.022][i][cplayer]     --reset-on-next-file-remove
+[   0.022][i][cplayer]  --resume-playback                Flag (default: yes)
+[   0.022][i][cplayer]  --resume-playback-check-mtime    Flag (default: no)
+[   0.022][i][cplayer]  --rtsp-transport                 Choices: lavf udp tcp http udp_multicast (default: tcp)
+[   0.022][i][cplayer]  --saturation                     Float (-100 to 100) (default: 0)
+[   0.022][i][cplayer]  --save-position-on-quit          Flag (default: no)
+[   0.022][i][cplayer]  --save-watch-history             Flag (default: no)
+[   0.022][i][cplayer]  --scale                          Choices: bilinear bicubic_fast oversample spline16 spline36 spline64 sinc lanczos ginseng bicubic hermite catmull_rom mitchell robidoux robidouxsharp box nearest triangle gaussian jinc ewa_lanczos ewa_hanning ewa_ginseng ewa_lanczossharp ewa_lanczos4sharpest ewa_lanczossoft haasnsoft ewa_robidoux ewa_robidouxsharp bartlett cosine hanning tukey hamming quadric welch kaiser blackman sphinx (default: lanczos)
+[   0.022][i][cplayer]  --scale-antiring                 Float (0 to 1) (default: 0)
+[   0.022][i][cplayer]  --scale-blur                     Float (default: 0)
+[   0.022][i][cplayer]  --scale-clamp                    Float (0 to 1) (default: 0)
+[   0.022][i][cplayer]  --scale-param1                   Float (default: default)
+[   0.022][i][cplayer]  --scale-param2                   Float (default: default)
+[   0.022][i][cplayer]  --scale-radius                   Float (0.5 to 16) (default: 0)
+[   0.022][i][cplayer]  --scale-taper                    Float (0 to 1) (default: 0)
+[   0.022][i][cplayer]  --scale-window                   Choices:  bartlett cosine hanning tukey hamming quadric welch kaiser blackman sphinx jinc (default: )
+[   0.022][i][cplayer]  --scale-wparam                   Float (default: default)
+[   0.022][i][cplayer]  --scale-wtaper                   Float (0 to 1) (default: 0)
+[   0.022][i][cplayer]  --scaler-resizes-only            Flag (default: yes)
+[   0.022][i][cplayer]  --screen                         Choices: default (or an integer) (0 to 32) (default: default)
+[   0.022][i][cplayer]  --screen-name                    String (default: )
+[   0.022][i][cplayer]  --screenshot-avif-encoder        String (default: libaom-av1)
+[   0.022][i][cplayer]  --screenshot-avif-opts           Key/value list (default: usage=allintra,crf=0,cpu-used=8)
+[   0.022][i][cplayer]     --screenshot-avif-opts-add
+[   0.022][i][cplayer]     --screenshot-avif-opts-append
+[   0.022][i][cplayer]     --screenshot-avif-opts-clr
+[   0.022][i][cplayer]     --screenshot-avif-opts-del
+[   0.022][i][cplayer]     --screenshot-avif-opts-set
+[   0.022][i][cplayer]     --screenshot-avif-opts-remove
+[   0.022][i][cplayer]  --screenshot-avif-pixfmt         String (default: )
+[   0.022][i][cplayer]  --screenshot-dir                 String (default: ) [file]
+[   0.022][i][cplayer]  --screenshot-directory           alias for screenshot-dir
+[   0.022][i][cplayer]  --screenshot-format              Choices: jpg jpeg png webp jxl avif (default: jpg)
+[   0.022][i][cplayer]  --screenshot-high-bit-depth      Flag (default: yes)
+[   0.022][i][cplayer]  --screenshot-jpeg-quality        Integer (0 to 100) (default: 90)
+[   0.022][i][cplayer]  --screenshot-jpeg-source-chroma  Flag (default: yes)
+[   0.022][i][cplayer]  --screenshot-jxl-distance        Double (0 to 15) (default: 1)
+[   0.022][i][cplayer]  --screenshot-jxl-effort          Integer (1 to 9) (default: 4)
+[   0.022][i][cplayer]  --screenshot-png-compression     Integer (0 to 9) (default: 7)
+[   0.022][i][cplayer]  --screenshot-png-filter          Integer (0 to 5) (default: 5)
+[   0.022][i][cplayer]  --screenshot-sw                  Flag (default: no)
+[   0.022][i][cplayer]  --screenshot-tag-colorspace      Flag (default: yes)
+[   0.022][i][cplayer]  --screenshot-template            String (default: mpv-shot%n)
+[   0.022][i][cplayer]  --screenshot-webp-compression    Integer (0 to 6) (default: 4)
+[   0.022][i][cplayer]  --screenshot-webp-lossless       Flag (default: no)
+[   0.022][i][cplayer]  --screenshot-webp-quality        Integer (0 to 100) (default: 75)
+[   0.022][i][cplayer]  --script                         alias for --scripts-append (CLI/config files only)
+[   0.022][i][cplayer]  --script-opt                     alias for --script-opts-append (CLI/config files only)
+[   0.022][i][cplayer]  --script-opts                    Key/value list (default: )
+[   0.022][i][cplayer]     --script-opts-add
+[   0.022][i][cplayer]     --script-opts-append
+[   0.022][i][cplayer]     --script-opts-clr
+[   0.022][i][cplayer]     --script-opts-del
+[   0.022][i][cplayer]     --script-opts-set
+[   0.022][i][cplayer]     --script-opts-remove
+[   0.022][i][cplayer]  --scripts                        String list (default: ) [file]
+[   0.023][i][cplayer]     --scripts-add
+[   0.023][i][cplayer]     --scripts-append
+[   0.023][i][cplayer]     --scripts-clr
+[   0.023][i][cplayer]     --scripts-del
+[   0.023][i][cplayer]     --scripts-pre
+[   0.023][i][cplayer]     --scripts-set
+[   0.023][i][cplayer]     --scripts-toggle
+[   0.023][i][cplayer]     --scripts-remove
+[   0.023][i][cplayer]  --sdr-adjust-gamma               Choices: auto yes no (default: auto)
+[   0.023][i][cplayer]  --secondary-sid                  Choices: no auto (or an integer) (0 to 8190) (default: no)
+[   0.023][i][cplayer]  --secondary-sub-ass-override     Choices: no yes scale force strip (default: strip)
+[   0.023][i][cplayer]  --secondary-sub-delay            Float (default: 0)
+[   0.023][i][cplayer]  --secondary-sub-pos              Float (0 to 150) (default: 0)
+[   0.023][i][cplayer]  --secondary-sub-visibility       Flag (default: yes)
+[   0.023][i][cplayer]  --sharpen                        Float (default: 0)
+[   0.023][i][cplayer]  --show-in-taskbar                Flag (default: yes)
+[   0.023][i][cplayer]  --show-profile                   String (default: ) [not in config files]
+[   0.023][i][cplayer]  --shuffle                        Flag (default: no)
+[   0.023][i][cplayer]  --sid                            Choices: no auto (or an integer) (0 to 8190) (default: auto)
+[   0.023][i][cplayer]  --sigmoid-center                 Float (0 to 1) (default: 0.75)
+[   0.023][i][cplayer]  --sigmoid-slope                  Float (1 to 20) (default: 6.5)
+[   0.023][i][cplayer]  --sigmoid-upscaling              Flag (default: yes)
+[   0.023][i][cplayer]  --slang                          String list (default: )
+[   0.023][i][cplayer]     --slang-add
+[   0.023][i][cplayer]     --slang-append
+[   0.023][i][cplayer]     --slang-clr
+[   0.023][i][cplayer]     --slang-del
+[   0.023][i][cplayer]     --slang-pre
+[   0.023][i][cplayer]     --slang-set
+[   0.023][i][cplayer]     --slang-toggle
+[   0.023][i][cplayer]     --slang-remove
+[   0.023][i][cplayer]  --snap-window                    Flag (default: no)
+[   0.023][i][cplayer]  --speed                          Double (0.01 to 100) (default: 1)
+[   0.023][i][cplayer]  --spirv-compiler                 Choices: auto shaderc (default: auto)
+[   0.023][i][cplayer]  --sstep                          Double (0 to any) (default: 0)
+[   0.023][i][cplayer]  --start                          Relative time or percent position (default: none)
+[   0.023][i][cplayer]  --stop-playback-on-init-failure  Flag (default: no)
+[   0.023][i][cplayer]  --stop-screensaver               Choices: no yes always (default: yes)
+[   0.023][i][cplayer]  --stream-buffer-size             ByteSize (4096 to 536870912) (default: 128.000 KiB)
+[   0.023][i][cplayer]  --stream-dump                    String (default: ) [file]
+[   0.023][i][cplayer]  --stream-lavf-o                  Key/value list (default: )
+[   0.023][i][cplayer]     --stream-lavf-o-add
+[   0.023][i][cplayer]     --stream-lavf-o-append
+[   0.023][i][cplayer]     --stream-lavf-o-clr
+[   0.023][i][cplayer]     --stream-lavf-o-del
+[   0.023][i][cplayer]     --stream-lavf-o-set
+[   0.023][i][cplayer]     --stream-lavf-o-remove
+[   0.023][i][cplayer]  --stream-record                  String (default: )
+[   0.023][i][cplayer]  --stretch-dvd-subs               Flag (default: no)
+[   0.023][i][cplayer]  --stretch-image-subs-to-screen   Flag (default: no)
+[   0.023][i][cplayer]  --sub                            alias for sid
+[   0.023][i][cplayer]  --sub-align-x                    Choices: left center right (default: center)
+[   0.023][i][cplayer]  --sub-align-y                    Choices: top center bottom (default: bottom)
+[   0.023][i][cplayer]  --sub-ass                        Flag (default: yes)
+[   0.023][i][cplayer]  --sub-ass-force-margins          Flag (default: no)
+[   0.023][i][cplayer]  --sub-ass-force-style            alias [deprecated] for sub-ass-style-overrides
+[   0.023][i][cplayer]  --sub-ass-hinting                alias [deprecated] for sub-hinting
+[   0.023][i][cplayer]  --sub-ass-justify                Flag (default: no)
+[   0.023][i][cplayer]  --sub-ass-line-spacing           alias [deprecated] for sub-line-spacing
+[   0.023][i][cplayer]  --sub-ass-override               Choices: no yes scale force strip (default: scale)
+[   0.023][i][cplayer]  --sub-ass-prune-delay            Double (-1 to 10000) (default: -1)
+[   0.023][i][cplayer]  --sub-ass-scale-with-window      Flag (default: no)
+[   0.023][i][cplayer]  --sub-ass-shaper                 alias [deprecated] for sub-shaper
+[   0.023][i][cplayer]  --sub-ass-style-overrides        String list (default: )
+[   0.023][i][cplayer]     --sub-ass-style-overrides-add
+[   0.023][i][cplayer]     --sub-ass-style-overrides-append
+[   0.023][i][cplayer]     --sub-ass-style-overrides-clr
+[   0.023][i][cplayer]     --sub-ass-style-overrides-del
+[   0.023][i][cplayer]     --sub-ass-style-overrides-pre
+[   0.023][i][cplayer]     --sub-ass-style-overrides-set
+[   0.023][i][cplayer]     --sub-ass-style-overrides-toggle
+[   0.023][i][cplayer]     --sub-ass-style-overrides-remove
+[   0.023][i][cplayer]  --sub-ass-styles                 String (default: ) [file]
+[   0.023][i][cplayer]  --sub-ass-use-video-data         Choices: none aspect-ratio all (default: all)
+[   0.023][i][cplayer]  --sub-ass-video-aspect-override  Aspect (0 to 10) (default: 0)
+[   0.023][i][cplayer]  --sub-ass-vsfilter-aspect-compat removed [deprecated]
+[   0.023][i][cplayer]  --sub-ass-vsfilter-blur-compat   removed [deprecated]
+[   0.023][i][cplayer]  --sub-ass-vsfilter-color-compat  Choices: no basic full force-601 (default: basic)
+[   0.023][i][cplayer]  --sub-auto                       Choices: no exact fuzzy all (default: exact)
+[   0.023][i][cplayer]  --sub-auto-exts                  String list (default: ass,idx,lrc,mks,pgs,rt,sbv,scc,smi,srt,srv3,ssa,sub,sup,utf,utf-8,utf8,vtt,ytt)
+[   0.023][i][cplayer]     --sub-auto-exts-add
+[   0.023][i][cplayer]     --sub-auto-exts-append
+[   0.023][i][cplayer]     --sub-auto-exts-clr
+[   0.023][i][cplayer]     --sub-auto-exts-del
+[   0.023][i][cplayer]     --sub-auto-exts-pre
+[   0.023][i][cplayer]     --sub-auto-exts-set
+[   0.023][i][cplayer]     --sub-auto-exts-toggle
+[   0.023][i][cplayer]     --sub-auto-exts-remove
+[   0.023][i][cplayer]  --sub-back-color                 Color (default: #AF000000)
+[   0.023][i][cplayer]  --sub-bitmap-max-size            Integer (default: 0)
+[   0.023][i][cplayer]  --sub-blur                       Float (0 to 20) (default: 0)
+[   0.023][i][cplayer]  --sub-bold                       Flag (default: no)
+[   0.023][i][cplayer]  --sub-border-color               alias for sub-outline-color
+[   0.023][i][cplayer]  --sub-border-size                alias for sub-outline-size
+[   0.023][i][cplayer]  --sub-border-style               Choices: outline-and-shadow opaque-box background-box (default: outline-and-shadow)
+[   0.023][i][cplayer]  --sub-clear-on-seek              Flag (default: no)
+[   0.023][i][cplayer]  --sub-codepage                   String (default: auto)
+[   0.023][i][cplayer]  --sub-color                      Color (default: #FFFFFFFF)
+[   0.023][i][cplayer]  --sub-create-cc-track            Flag (default: no)
+[   0.023][i][cplayer]  --sub-delay                      Float (default: 0)
+[   0.023][i][cplayer]  --sub-demuxer                    String (default: )
+[   0.023][i][cplayer]  --sub-file                       alias for --sub-files-append (CLI/config files only)
+[   0.023][i][cplayer]  --sub-file-paths                 String list (default: ) [file]
+[   0.023][i][cplayer]     --sub-file-paths-add
+[   0.023][i][cplayer]     --sub-file-paths-append
+[   0.023][i][cplayer]     --sub-file-paths-clr
+[   0.023][i][cplayer]     --sub-file-paths-del
+[   0.023][i][cplayer]     --sub-file-paths-pre
+[   0.023][i][cplayer]     --sub-file-paths-set
+[   0.023][i][cplayer]     --sub-file-paths-toggle
+[   0.023][i][cplayer]     --sub-file-paths-remove
+[   0.023][i][cplayer]  --sub-files                      String list (default: ) [file]
+[   0.023][i][cplayer]     --sub-files-add
+[   0.023][i][cplayer]     --sub-files-append
+[   0.023][i][cplayer]     --sub-files-clr
+[   0.023][i][cplayer]     --sub-files-del
+[   0.023][i][cplayer]     --sub-files-pre
+[   0.023][i][cplayer]     --sub-files-set
+[   0.023][i][cplayer]     --sub-files-toggle
+[   0.023][i][cplayer]     --sub-files-remove
+[   0.023][i][cplayer]  --sub-filter-jsre                String list (default: )
+[   0.023][i][cplayer]     --sub-filter-jsre-add
+[   0.023][i][cplayer]     --sub-filter-jsre-append
+[   0.023][i][cplayer]     --sub-filter-jsre-clr
+[   0.023][i][cplayer]     --sub-filter-jsre-del
+[   0.023][i][cplayer]     --sub-filter-jsre-pre
+[   0.023][i][cplayer]     --sub-filter-jsre-set
+[   0.023][i][cplayer]     --sub-filter-jsre-toggle
+[   0.023][i][cplayer]     --sub-filter-jsre-remove
+[   0.023][i][cplayer]  --sub-filter-regex               String list (default: )
+[   0.023][i][cplayer]     --sub-filter-regex-add
+[   0.023][i][cplayer]     --sub-filter-regex-append
+[   0.023][i][cplayer]     --sub-filter-regex-clr
+[   0.023][i][cplayer]     --sub-filter-regex-del
+[   0.023][i][cplayer]     --sub-filter-regex-pre
+[   0.023][i][cplayer]     --sub-filter-regex-set
+[   0.023][i][cplayer]     --sub-filter-regex-toggle
+[   0.023][i][cplayer]     --sub-filter-regex-remove
+[   0.023][i][cplayer]  --sub-filter-regex-enable        Flag (default: yes)
+[   0.023][i][cplayer]  --sub-filter-regex-plain         Flag (default: no)
+[   0.023][i][cplayer]  --sub-filter-regex-warn          Flag (default: no)
+[   0.023][i][cplayer]  --sub-filter-sdh                 Flag (default: no)
+[   0.023][i][cplayer]  --sub-filter-sdh-enclosures      String list (default: (),[],（）)
+[   0.023][i][cplayer]     --sub-filter-sdh-enclosures-add
+[   0.023][i][cplayer]     --sub-filter-sdh-enclosures-append
+[   0.023][i][cplayer]     --sub-filter-sdh-enclosures-clr
+[   0.023][i][cplayer]     --sub-filter-sdh-enclosures-del
+[   0.023][i][cplayer]     --sub-filter-sdh-enclosures-pre
+[   0.023][i][cplayer]     --sub-filter-sdh-enclosures-set
+[   0.023][i][cplayer]     --sub-filter-sdh-enclosures-toggle
+[   0.023][i][cplayer]     --sub-filter-sdh-enclosures-remove
+[   0.023][i][cplayer]  --sub-filter-sdh-harder          Flag (default: no)
+[   0.023][i][cplayer]  --sub-fix-timing                 Flag (default: no)
+[   0.023][i][cplayer]  --sub-fix-timing-keep            Integer (default: 400)
+[   0.023][i][cplayer]  --sub-fix-timing-threshold       Integer (default: 210)
+[   0.023][i][cplayer]  --sub-font                       String (default: sans-serif)
+[   0.023][i][cplayer]  --sub-font-provider              Choices: auto none fontconfig (default: auto)
+[   0.023][i][cplayer]  --sub-font-size                  Float (1 to 9000) (default: 38)
+[   0.023][i][cplayer]  --sub-fonts-dir                  String (default: ) [file]
+[   0.023][i][cplayer]  --sub-forced-events-only         Flag (default: no)
+[   0.023][i][cplayer]  --sub-fps                        Float (default: 0)
+[   0.023][i][cplayer]  --sub-gauss                      Float (0 to 3) (default: 0)
+[   0.023][i][cplayer]  --sub-glyph-limit                Integer (default: 0)
+[   0.023][i][cplayer]  --sub-gray                       Flag (default: no)
+[   0.023][i][cplayer]  --sub-hdr-peak                   Choices: sdr (or an integer) (10 to 10000) (default: sdr)
+[   0.023][i][cplayer]  --sub-hinting                    Choices: none light normal native (default: none)
+[   0.023][i][cplayer]  --sub-italic                     Flag (default: no)
+[   0.024][i][cplayer]  --sub-justify                    Choices: auto left center right (default: auto)
+[   0.024][i][cplayer]  --sub-lavc-o                     Key/value list (default: )
+[   0.024][i][cplayer]     --sub-lavc-o-add
+[   0.024][i][cplayer]     --sub-lavc-o-append
+[   0.024][i][cplayer]     --sub-lavc-o-clr
+[   0.024][i][cplayer]     --sub-lavc-o-del
+[   0.024][i][cplayer]     --sub-lavc-o-set
+[   0.024][i][cplayer]     --sub-lavc-o-remove
+[   0.024][i][cplayer]  --sub-line-spacing               Float (-1000 to 1000) (default: 0)
+[   0.024][i][cplayer]  --sub-margin-x                   Integer (0 to 2147483647) (default: 19)
+[   0.024][i][cplayer]  --sub-margin-y                   Integer (0 to 2147483647) (default: 34)
+[   0.024][i][cplayer]  --sub-margin-y-offset            Integer (default: 0)
+[   0.024][i][cplayer]  --sub-outline-color              Color (default: #FF000000)
+[   0.024][i][cplayer]  --sub-outline-size               Float (default: 1.65)
+[   0.024][i][cplayer]  --sub-past-video-end             Flag (default: no)
+[   0.024][i][cplayer]  --sub-pos                        Float (0 to 150) (default: 100)
+[   0.024][i][cplayer]  --sub-scale                      Float (0 to 100) (default: 1)
+[   0.024][i][cplayer]  --sub-scale-by-window            Flag (default: yes)
+[   0.024][i][cplayer]  --sub-scale-signs                Flag (default: no)
+[   0.024][i][cplayer]  --sub-scale-with-window          Flag (default: yes)
+[   0.024][i][cplayer]  --sub-shadow-color               alias for sub-back-color
+[   0.024][i][cplayer]  --sub-shadow-offset              Float (default: 0)
+[   0.024][i][cplayer]  --sub-shaper                     Choices: simple complex (default: complex)
+[   0.024][i][cplayer]  --sub-spacing                    Float (-10 to 10) (default: 0)
+[   0.024][i][cplayer]  --sub-speed                      Float (default: 1)
+[   0.024][i][cplayer]  --sub-stretch-durations          Flag (default: no)
+[   0.024][i][cplayer]  --sub-use-margins                Flag (default: yes)
+[   0.024][i][cplayer]  --sub-visibility                 Flag (default: yes)
+[   0.024][i][cplayer]  --sub-vsfilter-bidi-compat       Flag (default: no)
+[   0.024][i][cplayer]  --subs-fallback                  Choices: no default yes (default: default)
+[   0.024][i][cplayer]  --subs-fallback-forced           Choices: no yes always (default: yes)
+[   0.024][i][cplayer]  --subs-match-os-language         Flag (default: yes)
+[   0.024][i][cplayer]  --subs-with-matching-audio       Choices: no forced yes (default: yes)
+[   0.024][i][cplayer]  --swapchain-depth                Integer (1 to 8) (default: 2)
+[   0.024][i][cplayer]  --sws-allow-zimg                 Flag (default: yes)
+[   0.024][i][cplayer]  --sws-bitexact                   Flag (default: no)
+[   0.024][i][cplayer]  --sws-cgb                        Float (0 to 100) (default: 0)
+[   0.024][i][cplayer]  --sws-chs                        Integer (-100 to 100) (default: 0)
+[   0.024][i][cplayer]  --sws-cs                         Float (-100 to 100) (default: 0)
+[   0.024][i][cplayer]  --sws-cvs                        Integer (-100 to 100) (default: 0)
+[   0.024][i][cplayer]  --sws-fast                       Flag (default: no)
+[   0.024][i][cplayer]  --sws-lgb                        Float (0 to 100) (default: 0)
+[   0.024][i][cplayer]  --sws-ls                         Float (-100 to 100) (default: 0)
+[   0.024][i][cplayer]  --sws-scaler                     Choices: fast-bilinear bilinear bicubic x point area bicublin gauss sinc lanczos spline (default: lanczos)
+[   0.024][i][cplayer]  --target-colorspace-hint         Choices: auto no yes (default: auto)
+[   0.024][i][cplayer]  --target-colorspace-hint-mode    Choices: target source source-dynamic (default: target)
+[   0.024][i][cplayer]  --target-colorspace-hint-strict  Flag (default: yes)
+[   0.024][i][cplayer]  --target-contrast                Choices: auto inf (or an integer) (10 to 10000000) (default: auto)
+[   0.024][i][cplayer]  --target-gamut                   String (default: )
+[   0.024][i][cplayer]  --target-lut                     String (default: ) [file]
+[   0.024][i][cplayer]  --target-peak                    Choices: auto (or an integer) (10 to 10000) (default: auto)
+[   0.024][i][cplayer]  --target-prim                    Choices: auto bt.601-525 bt.601-625 bt.709 bt.2020 bt.470m apple adobe prophoto cie1931 dci-p3 display-p3 v-gamut s-gamut ebu3213 film-c aces-ap0 aces-ap1 (default: auto)
+[   0.024][i][cplayer]  --target-trc                     Choices: auto bt.1886 srgb linear gamma1.8 gamma2.0 gamma2.2 gamma2.4 gamma2.6 gamma2.8 prophoto pq hlg v-log s-log1 s-log2 st428 scrgb (default: auto)
+[   0.024][i][cplayer]  --taskbar-progress               Flag (default: yes)
+[   0.024][i][cplayer]  --teletext-page                  Integer (-1 to 999) (default: 0)
+[   0.024][i][cplayer]  --temporal-dither                Flag (default: no)
+[   0.024][i][cplayer]  --temporal-dither-period         Integer (1 to 128) (default: 1)
+[   0.024][i][cplayer]  --term-osd                       Choices: force auto no (default: auto)
+[   0.024][i][cplayer]  --term-osd-bar                   Flag (default: no)
+[   0.024][i][cplayer]  --term-osd-bar-chars             String (default: [-+-])
+[   0.024][i][cplayer]  --term-playing-msg               String (default: )
+[   0.024][i][cplayer]  --term-status-msg                String (default: )
+[   0.024][i][cplayer]  --term-title                     String (default: )
+[   0.024][i][cplayer]  --terminal                       Flag (default: yes)
+[   0.024][i][cplayer]  --title                          String (default: ${?media-title:${media-title}}${!media-title:No file} - mpv)
+[   0.024][i][cplayer]  --title-bar                      Flag (default: yes)
+[   0.024][i][cplayer]  --tls-ca-file                    String (default: ) [file]
+[   0.024][i][cplayer]  --tls-cert-file                  String (default: ) [file]
+[   0.024][i][cplayer]  --tls-key-file                   String (default: ) [file]
+[   0.024][i][cplayer]  --tls-verify                     Flag (default: no)
+[   0.024][i][cplayer]  --tone-mapping                   Choices: auto clip mobius reinhard hable gamma linear spline bt.2390 bt.2446a st2094-40 st2094-10 (default: auto)
+[   0.024][i][cplayer]  --tone-mapping-desaturate        removed [deprecated]
+[   0.024][i][cplayer]  --tone-mapping-desaturate-exponent removed [deprecated]
+[   0.024][i][cplayer]  --tone-mapping-max-boost         Float (1 to 10) (default: 1)
+[   0.024][i][cplayer]  --tone-mapping-param             Float (default: default)
+[   0.024][i][cplayer]  --tone-mapping-visualize         Flag (default: no)
+[   0.024][i][cplayer]  --track-auto-selection           Flag (default: yes)
+[   0.024][i][cplayer]  --treat-srgb-as-power22          Choices: no input output both auto (default: auto)
+[   0.024][i][cplayer]  --tscale                         Choices: oversample linear spline16 spline36 spline64 sinc lanczos ginseng bicubic hermite catmull_rom mitchell robidoux robidouxsharp box nearest triangle gaussian bartlett cosine hanning tukey hamming quadric welch kaiser blackman sphinx jinc (default: oversample)
+[   0.024][i][cplayer]  --tscale-antiring                Float (0 to 1) (default: 0)
+[   0.024][i][cplayer]  --tscale-blur                    Float (default: 0)
+[   0.024][i][cplayer]  --tscale-clamp                   Float (0 to 1) (default: 0)
+[   0.024][i][cplayer]  --tscale-param1                  Float (default: default)
+[   0.024][i][cplayer]  --tscale-param2                  Float (default: default)
+[   0.024][i][cplayer]  --tscale-radius                  Float (0.5 to 16) (default: 0)
+[   0.024][i][cplayer]  --tscale-taper                   Float (0 to 1) (default: 0)
+[   0.024][i][cplayer]  --tscale-window                  Choices:  bartlett cosine hanning tukey hamming quadric welch kaiser blackman sphinx jinc (default: )
+[   0.024][i][cplayer]  --tscale-wparam                  Float (default: default)
+[   0.024][i][cplayer]  --tscale-wtaper                  Float (0 to 1) (default: 0)
+[   0.024][i][cplayer]  --unregister                     Flag (default: no)
+[   0.024][i][cplayer]  --untimed                        Flag (default: no)
+[   0.024][i][cplayer]  --use-embedded-icc-profile       Flag (default: yes)
+[   0.024][i][cplayer]  --use-filedir-conf               Flag (default: no)
+[   0.024][i][cplayer]  --user-agent                     String (default: libmpv)
+[   0.024][i][cplayer]  --v                              Flag [not in config files]
+[   0.024][i][cplayer]  --V                              Print [not in config files]
+[   0.024][i][cplayer]  --vaapi-device                   String (default: )
+[   0.024][i][cplayer]  --vd                             String (default: )
+[   0.024][i][cplayer]  --vd-apply-cropping              Flag (default: yes)
+[   0.024][i][cplayer]  --vd-lavc-assume-old-x264        Flag (default: no)
+[   0.024][i][cplayer]  --vd-lavc-bitexact               Flag (default: no)
+[   0.024][i][cplayer]  --vd-lavc-check-hw-profile       Flag (default: yes)
+[   0.024][i][cplayer]  --vd-lavc-dr                     Choices: auto no yes (default: auto)
+[   0.024][i][cplayer]  --vd-lavc-fast                   Flag (default: no)
+[   0.024][i][cplayer]  --vd-lavc-film-grain             Choices: auto cpu gpu (default: auto)
+[   0.024][i][cplayer]  --vd-lavc-framedrop              Choices: none default nonref bidir nonkey all (default: nonref)
+[   0.024][i][cplayer]  --vd-lavc-o                      Key/value list (default: )
+[   0.024][i][cplayer]     --vd-lavc-o-add
+[   0.024][i][cplayer]     --vd-lavc-o-append
+[   0.024][i][cplayer]     --vd-lavc-o-clr
+[   0.024][i][cplayer]     --vd-lavc-o-del
+[   0.024][i][cplayer]     --vd-lavc-o-set
+[   0.024][i][cplayer]     --vd-lavc-o-remove
+[   0.024][i][cplayer]  --vd-lavc-show-all               Flag (default: no)
+[   0.024][i][cplayer]  --vd-lavc-skipframe              Choices: none default nonref bidir nonkey all (default: default)
+[   0.024][i][cplayer]  --vd-lavc-skipidct               Choices: none default nonref bidir nonkey all (default: default)
+[   0.024][i][cplayer]  --vd-lavc-skiploopfilter         Choices: none default nonref bidir nonkey all (default: default)
+[   0.024][i][cplayer]  --vd-lavc-software-fallback      alias [deprecated] for hwdec-software-fallback
+[   0.024][i][cplayer]  --vd-lavc-threads                Integer (0 to any) (default: 0)
+[   0.024][i][cplayer]  --vd-queue-enable                Flag (default: no)
+[   0.024][i][cplayer]  --vd-queue-max-bytes             ByteSize (0 to 4.6116860184274e+18) (default: 512.000 MiB)
+[   0.024][i][cplayer]  --vd-queue-max-samples           Integer64 (0 to any) (default: 50)
+[   0.024][i][cplayer]  --vd-queue-max-secs              Double (0 to any) (default: 2)
+[   0.024][i][cplayer]  --version                        Print [not in config files]
+[   0.024][i][cplayer]  --vf                             Object settings list (default: )
+[   0.024][i][cplayer]     --vf-add
+[   0.024][i][cplayer]     --vf-append
+[   0.024][i][cplayer]     --vf-clr
+[   0.024][i][cplayer]     --vf-help
+[   0.024][i][cplayer]     --vf-pre
+[   0.024][i][cplayer]     --vf-set
+[   0.024][i][cplayer]     --vf-toggle
+[   0.024][i][cplayer]     --vf-remove
+[   0.024][i][cplayer]  --vid                            Choices: no auto (or an integer) (0 to 8190) (default: auto)
+[   0.024][i][cplayer]  --video                          alias for vid
+[   0.024][i][cplayer]  --video-align-x                  Float (-1 to 1) (default: 0)
+[   0.024][i][cplayer]  --video-align-y                  Float (-1 to 1) (default: 0)
+[   0.024][i][cplayer]  --video-aspect-method            Choices: bitstream container ignore (default: container)
+[   0.024][i][cplayer]  --video-aspect-override          Aspect (-2 to 10) (default: -2)
+[   0.024][i][cplayer]  --video-backward-batch           Integer (0 to 1024) (default: 1)
+[   0.024][i][cplayer]  --video-backward-overlap         Choices: auto (or an integer) (0 to 1024) (default: auto)
+[   0.024][i][cplayer]  --video-crop                     Video rect (default: )
+[   0.024][i][cplayer]  --video-exts                     String list (default: 3g2,3gp,avi,flv,ivf,m2ts,m4v,mj2,mkv,mov,mp4,mpeg,mpg,mxf,ogv,rmvb,ts,webm,wmv,y4m)
+[   0.024][i][cplayer]     --video-exts-add
+[   0.024][i][cplayer]     --video-exts-append
+[   0.024][i][cplayer]     --video-exts-clr
+[   0.024][i][cplayer]     --video-exts-del
+[   0.024][i][cplayer]     --video-exts-pre
+[   0.024][i][cplayer]     --video-exts-set
+[   0.024][i][cplayer]     --video-exts-toggle
+[   0.024][i][cplayer]     --video-exts-remove
+[   0.024][i][cplayer]  --video-latency-hacks            Flag (default: no)
+[   0.024][i][cplayer]  --video-margin-ratio-bottom      Float (0 to 1) (default: 0)
+[   0.024][i][cplayer]  --video-margin-ratio-left        Float (0 to 1) (default: 0)
+[   0.024][i][cplayer]  --video-margin-ratio-right       Float (0 to 1) (default: 0)
+[   0.024][i][cplayer]  --video-margin-ratio-top         Float (0 to 1) (default: 0)
+[   0.024][i][cplayer]  --video-osd                      Flag (default: yes)
+[   0.024][i][cplayer]  --video-output-levels            Choices: auto limited full (default: auto)
+[   0.024][i][cplayer]  --video-pan-x                    Float (default: 0)
+[   0.024][i][cplayer]  --video-pan-y                    Float (default: 0)
+[   0.024][i][cplayer]  --video-recenter                 Flag (default: no)
+[   0.024][i][cplayer]  --video-reversal-buffer          ByteSize (0 to 4.6116860184274e+18) (default: 1.000 GiB)
+[   0.024][i][cplayer]  --video-rotate                   Choices: no (or an integer) (0 to 359) (default: 0)
+[   0.024][i][cplayer]  --video-scale-x                  Float (0 to 10000) (default: 1)
+[   0.024][i][cplayer]  --video-scale-y                  Float (0 to 10000) (default: 1)
+[   0.024][i][cplayer]  --video-sync                     Choices: audio display-resample display-resample-vdrop display-resample-desync display-tempo display-adrop display-vdrop display-desync desync (default: audio)
+[   0.024][i][cplayer]  --video-sync-max-audio-change    Double (0 to 1) (default: 0.125)
+[   0.024][i][cplayer]  --video-sync-max-factor          Integer (1 to 10) (default: 5)
+[   0.024][i][cplayer]  --video-sync-max-video-change    Double (0 to any) (default: 1)
+[   0.024][i][cplayer]  --video-timing-offset            Double (0 to 1) (default: 0.05)
+[   0.024][i][cplayer]  --video-unscaled                 Choices: no yes downscale-big (default: no)
+[   0.024][i][cplayer]  --video-zoom                     Float (-20 to 20) (default: 0)
+[   0.024][i][cplayer]  --vlang                          String list (default: )
+[   0.024][i][cplayer]     --vlang-add
+[   0.024][i][cplayer]     --vlang-append
+[   0.024][i][cplayer]     --vlang-clr
+[   0.024][i][cplayer]     --vlang-del
+[   0.024][i][cplayer]     --vlang-pre
+[   0.025][i][cplayer]     --vlang-set
+[   0.025][i][cplayer]     --vlang-toggle
+[   0.025][i][cplayer]     --vlang-remove
+[   0.025][i][cplayer]  --vo                             Object settings list (default: )
+[   0.025][i][cplayer]     --vo-add
+[   0.025][i][cplayer]     --vo-append
+[   0.025][i][cplayer]     --vo-clr
+[   0.025][i][cplayer]     --vo-help
+[   0.025][i][cplayer]     --vo-pre
+[   0.025][i][cplayer]     --vo-set
+[   0.025][i][cplayer]     --vo-toggle
+[   0.025][i][cplayer]     --vo-remove
+[   0.025][i][cplayer]  --vo-direct3d-disable-texture-align Flag (default: no)
+[   0.025][i][cplayer]  --vo-direct3d-exact-backbuffer   Flag (default: no)
+[   0.025][i][cplayer]  --vo-direct3d-force-power-of-2   Flag (default: no)
+[   0.025][i][cplayer]  --vo-direct3d-swap-discard       Flag (default: no)
+[   0.025][i][cplayer]  --vo-direct3d-texture-memory     Choices: default managed default-pool default-pool-shadow scratch (default: default)
+[   0.025][i][cplayer]  --vo-image-avif-encoder          String (default: libaom-av1)
+[   0.025][i][cplayer]  --vo-image-avif-opts             Key/value list (default: usage=allintra,crf=0,cpu-used=8)
+[   0.025][i][cplayer]     --vo-image-avif-opts-add
+[   0.025][i][cplayer]     --vo-image-avif-opts-append
+[   0.025][i][cplayer]     --vo-image-avif-opts-clr
+[   0.025][i][cplayer]     --vo-image-avif-opts-del
+[   0.025][i][cplayer]     --vo-image-avif-opts-set
+[   0.025][i][cplayer]     --vo-image-avif-opts-remove
+[   0.025][i][cplayer]  --vo-image-avif-pixfmt           String (default: )
+[   0.025][i][cplayer]  --vo-image-format                Choices: jpg jpeg png webp jxl avif (default: jpg)
+[   0.025][i][cplayer]  --vo-image-high-bit-depth        Flag (default: yes)
+[   0.025][i][cplayer]  --vo-image-jpeg-quality          Integer (0 to 100) (default: 90)
+[   0.025][i][cplayer]  --vo-image-jpeg-source-chroma    Flag (default: yes)
+[   0.025][i][cplayer]  --vo-image-jxl-distance          Double (0 to 15) (default: 1)
+[   0.025][i][cplayer]  --vo-image-jxl-effort            Integer (1 to 9) (default: 4)
+[   0.025][i][cplayer]  --vo-image-outdir                String (default: ) [file]
+[   0.025][i][cplayer]  --vo-image-png-compression       Integer (0 to 9) (default: 7)
+[   0.025][i][cplayer]  --vo-image-png-filter            Integer (0 to 5) (default: 5)
+[   0.025][i][cplayer]  --vo-image-tag-colorspace        Flag (default: yes)
+[   0.025][i][cplayer]  --vo-image-webp-compression      Integer (0 to 6) (default: 4)
+[   0.025][i][cplayer]  --vo-image-webp-lossless         Flag (default: no)
+[   0.025][i][cplayer]  --vo-image-webp-quality          Integer (0 to 100) (default: 75)
+[   0.025][i][cplayer]  --vo-kitty-alt-screen            Flag (default: yes)
+[   0.025][i][cplayer]  --vo-kitty-auto-multiplexer-passthrough Flag (default: no)
+[   0.025][i][cplayer]  --vo-kitty-cols                  Integer (default: 0)
+[   0.025][i][cplayer]  --vo-kitty-config-clear          Flag (default: yes)
+[   0.025][i][cplayer]  --vo-kitty-height                Integer (default: 0)
+[   0.025][i][cplayer]  --vo-kitty-left                  Integer (default: 0)
+[   0.025][i][cplayer]  --vo-kitty-rows                  Integer (default: 0)
+[   0.025][i][cplayer]  --vo-kitty-top                   Integer (default: 0)
+[   0.025][i][cplayer]  --vo-kitty-use-shm               Flag (default: no)
+[   0.025][i][cplayer]  --vo-kitty-width                 Integer (default: 0)
+[   0.025][i][cplayer]  --vo-mmcss-profile               String (default: Playback)
+[   0.025][i][cplayer]  --vo-null-fps                    Double (0 to 10000) (default: 0)
+[   0.025][i][cplayer]  --vo-sixel-alt-screen            Flag (default: yes)
+[   0.025][i][cplayer]  --vo-sixel-buffered              Flag (default: no)
+[   0.025][i][cplayer]  --vo-sixel-cols                  Integer (default: 0)
+[   0.025][i][cplayer]  --vo-sixel-config-clear          Flag (default: yes)
+[   0.025][i][cplayer]  --vo-sixel-dither                Choices: auto none atkinson fs jajuni stucki burkes arithmetic xor (default: auto)
+[   0.025][i][cplayer]  --vo-sixel-fixedpalette          Flag (default: yes)
+[   0.025][i][cplayer]  --vo-sixel-height                Integer (default: 0)
+[   0.025][i][cplayer]  --vo-sixel-left                  Integer (default: 0)
+[   0.025][i][cplayer]  --vo-sixel-pad-x                 Integer (default: -1)
+[   0.025][i][cplayer]  --vo-sixel-pad-y                 Integer (default: -1)
+[   0.025][i][cplayer]  --vo-sixel-reqcolors             Integer (default: 256)
+[   0.025][i][cplayer]  --vo-sixel-rows                  Integer (default: 0)
+[   0.025][i][cplayer]  --vo-sixel-threshold             Integer (default: -1)
+[   0.025][i][cplayer]  --vo-sixel-top                   Integer (default: 0)
+[   0.025][i][cplayer]  --vo-sixel-width                 Integer (default: 0)
+[   0.025][i][cplayer]  --vo-tct-256                     Flag (default: no)
+[   0.025][i][cplayer]  --vo-tct-algo                    Choices: plain half-blocks (default: half-blocks)
+[   0.025][i][cplayer]  --vo-tct-buffering               Choices: pixel line frame (default: line)
+[   0.025][i][cplayer]  --vo-tct-height                  Integer (default: 0)
+[   0.025][i][cplayer]  --vo-tct-width                   Integer (default: 0)
+[   0.025][i][cplayer]  --volume                         Float (-1 to 1000) (default: 100)
+[   0.025][i][cplayer]  --volume-gain                    Float (-150 to 150) (default: 0)
+[   0.025][i][cplayer]  --volume-gain-max                Float (0 to 150) (default: 12)
+[   0.025][i][cplayer]  --volume-gain-min                Float (-150 to 0) (default: -96)
+[   0.025][i][cplayer]  --volume-max                     Float (100 to 1000) (default: 130)
+[   0.025][i][cplayer]  --vulkan-async-compute           Flag (default: yes)
+[   0.025][i][cplayer]  --vulkan-async-transfer          Flag (default: yes)
+[   0.025][i][cplayer]  --vulkan-device                  String (default: )
+[   0.025][i][cplayer]  --vulkan-queue-count             Integer (1 to 8) (default: 1)
+[   0.025][i][cplayer]  --vulkan-swap-mode               Choices: auto fifo fifo-relaxed mailbox immediate (default: auto)
+[   0.025][i][cplayer]  --wasapi-exclusive-buffer        Choices: default min (or an integer) (1 to 2000000) (default: default)
+[   0.025][i][cplayer]  --watch-history-path             String (default: ~~state/watch_history.jsonl) [file]
+[   0.025][i][cplayer]  --watch-later-dir                String (default: ) [file]
+[   0.025][i][cplayer]  --watch-later-directory          alias for watch-later-dir
+[   0.025][i][cplayer]  --watch-later-options            String list (default: start,speed,pitch,edition,volume,mute,audio-delay,gamma,brightness,contrast,saturation,hue,deinterlace,vf,af,panscan,aid,vid,sid,sub-delay,sub-speed,sub-pos,sub-visibility,sub-scale,sub-use-margins,sub-ass-force-margins,sub-ass-use-video-data,sub-ass-override,secondary-sid,secondary-sub-delay,secondary-sub-pos,secondary-sub-ass-override,secondary-sub-visibility,ab-loop-a,ab-loop-b,video-aspect-override,video-aspect-method,video-unscaled,video-pan-x,video-pan-y,video-rotate,video-crop,video-zoom,video-scale-x,video-scale-y,video-align-x,video-align-y)
+[   0.025][i][cplayer]     --watch-later-options-add
+[   0.025][i][cplayer]     --watch-later-options-append
+[   0.025][i][cplayer]     --watch-later-options-clr
+[   0.025][i][cplayer]     --watch-later-options-del
+[   0.025][i][cplayer]     --watch-later-options-pre
+[   0.025][i][cplayer]     --watch-later-options-set
+[   0.025][i][cplayer]     --watch-later-options-toggle
+[   0.025][i][cplayer]     --watch-later-options-remove
+[   0.025][i][cplayer]  --wayland-app-id                 String (default: mpv)
+[   0.025][i][cplayer]  --wid                            Integer64 (default: -1)
+[   0.025][i][cplayer]  --window-affinity                Choices: default excludefromcapture monitor (default: default)
+[   0.025][i][cplayer]  --window-corners                 Choices: default donotround round roundsmall (default: default)
+[   0.025][i][cplayer]  --window-dragging                Flag (default: yes)
+[   0.025][i][cplayer]  --window-maximized               Flag (default: no)
+[   0.025][i][cplayer]  --window-minimized               Flag (default: no)
+[   0.025][i][cplayer]  --window-scale                   Double (0.001 to 100) (default: 1)
+[   0.025][i][cplayer]  --write-filename-in-watch-later-config Flag (default: no)
+[   0.025][i][cplayer]  --x11-name                       String (default: )
+[   0.025][i][cplayer]  --ytdl                           Flag (default: yes)
+[   0.025][i][cplayer]  --ytdl-format                    String (default: )
+[   0.025][i][cplayer]  --ytdl-raw-options               Key/value list (default: )
+[   0.025][i][cplayer]     --ytdl-raw-options-add
+[   0.025][i][cplayer]     --ytdl-raw-options-append
+[   0.025][i][cplayer]     --ytdl-raw-options-clr
+[   0.025][i][cplayer]     --ytdl-raw-options-del
+[   0.025][i][cplayer]     --ytdl-raw-options-set
+[   0.025][i][cplayer]     --ytdl-raw-options-remove
+[   0.025][i][cplayer]  --zimg-dither                    Choices: no ordered random error-diffusion (default: random)
+[   0.025][i][cplayer]  --zimg-fast                      Flag (default: yes)
+[   0.025][i][cplayer]  --zimg-scaler                    Choices: point bilinear bicubic spline16 spline36 lanczos (default: lanczos)
+[   0.025][i][cplayer]  --zimg-scaler-chroma             Choices: point bilinear bicubic spline16 spline36 lanczos (default: bilinear)
+[   0.025][i][cplayer]  --zimg-scaler-chroma-param-a     Double (default: default)
+[   0.025][i][cplayer]  --zimg-scaler-chroma-param-b     Double (default: default)
+[   0.025][i][cplayer]  --zimg-scaler-param-a            Double (default: default)
+[   0.025][i][cplayer]  --zimg-scaler-param-b            Double (default: default)

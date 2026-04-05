@@ -68,8 +68,56 @@ pub struct PlaybackLaunchResult {
     pub message: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlayerTrack {
+    pub id: i64,
+    pub kind: String,
+    pub title: Option<String>,
+    pub lang: Option<String>,
+    pub codec: Option<String>,
+    pub external: bool,
+    pub selected: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlayerStateSnapshot {
+    pub video_id: Option<String>,
+    pub video_path: Option<String>,
+    pub title: Option<String>,
+    pub position_secs: f64,
+    pub duration_secs: Option<f64>,
+    pub paused: bool,
+    pub volume: f64,
+    pub fullscreen: bool,
+    pub is_loaded: bool,
+    pub subtitle_tracks: Vec<PlayerTrack>,
+    pub audio_tracks: Vec<PlayerTrack>,
+    pub active_subtitle_id: Option<i64>,
+    pub active_audio_id: Option<i64>,
+}
+
+impl Default for PlayerStateSnapshot {
+    fn default() -> Self {
+        Self {
+            video_id: None,
+            video_path: None,
+            title: None,
+            position_secs: 0.0,
+            duration_secs: None,
+            paused: false,
+            volume: 100.0,
+            fullscreen: false,
+            is_loaded: false,
+            subtitle_tracks: Vec::new(),
+            audio_tracks: Vec::new(),
+            active_subtitle_id: None,
+            active_audio_id: None,
+        }
+    }
+}
+
 /// Supported video extensions
 pub const VIDEO_EXTENSIONS: &[&str] = &[
-    "mp4", "mkv", "avi", "mov", "wmv", "flv", "webm", "m4v",
-    "mpg", "mpeg", "3gp", "ts", "mts", "m2ts", "vob", "ogv",
+    "mp4", "mkv", "avi", "mov", "wmv", "flv", "webm", "m4v", "mpg", "mpeg", "3gp", "ts", "mts",
+    "m2ts", "vob", "ogv",
 ];

@@ -1,8 +1,8 @@
-use std::path::Path;
-use walkdir::WalkDir;
 use crate::models::*;
 use serde_json::Value;
+use std::path::Path;
 use std::process::Command;
+use walkdir::WalkDir;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -21,7 +21,7 @@ pub struct ProbedVideoMetadata {
 /// Scan a directory for video files. Returns list of file paths.
 pub fn scan_directory(dir_path: &str) -> Vec<String> {
     let mut video_paths = Vec::new();
-    
+
     let path = Path::new(dir_path);
     if !path.exists() || !path.is_dir() {
         return video_paths;
@@ -57,9 +57,10 @@ pub fn create_video_record(file_path: &str, library_id: &str) -> Option<VideoRec
 
     let metadata = std::fs::metadata(path).ok()?;
     let file_name = path.file_name()?.to_string_lossy().to_string();
-    
+
     // Generate a clean title from filename
-    let title = path.file_stem()
+    let title = path
+        .file_stem()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| file_name.clone())
         // Clean up common patterns
@@ -68,7 +69,8 @@ pub fn create_video_record(file_path: &str, library_id: &str) -> Option<VideoRec
         .replace('-', " ");
 
     let now = chrono::Utc::now().to_rfc3339();
-    let modified = metadata.modified()
+    let modified = metadata
+        .modified()
         .map(|t| chrono::DateTime::<chrono::Utc>::from(t).to_rfc3339())
         .unwrap_or_else(|_| now.clone());
 
@@ -95,8 +97,10 @@ fn probe_media(file_path: &str) -> Option<Value> {
     let output = media_command("ffprobe")
         .args([
             "-nostdin",
-            "-v", "quiet",
-            "-print_format", "json",
+            "-v",
+            "quiet",
+            "-print_format",
+            "json",
             "-show_format",
             "-show_streams",
             file_path,
@@ -156,16 +160,22 @@ pub fn extract_metadata(file_path: &str) -> ProbedVideoMetadata {
 
     ProbedVideoMetadata {
         duration_secs: duration,
-        width: primary_video_stream.and_then(|stream| stream["width"].as_i64().map(|value| value as i32)),
-        height: primary_video_stream.and_then(|stream| stream["height"].as_i64().map(|value| value as i32)),
+        width: primary_video_stream
+            .and_then(|stream| stream["width"].as_i64().map(|value| value as i32)),
+        height: primary_video_stream
+            .and_then(|stream| stream["height"].as_i64().map(|value| value as i32)),
         embedded_artwork_stream_index,
     }
 }
 
 /// Generate a thumbnail for a video using ffmpeg
-pub fn generate_thumbnail(video_path: &str, output_path: &str, timestamp_secs: f64) -> Result<(), String> {
+pub fn generate_thumbnail(
+    video_path: &str,
+    output_path: &str,
+    timestamp_secs: f64,
+) -> Result<(), String> {
     let timestamp = format!("{:.2}", timestamp_secs);
-    
+
     // Ensure the output directory exists
     if let Some(parent) = Path::new(output_path).parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
@@ -175,12 +185,18 @@ pub fn generate_thumbnail(video_path: &str, output_path: &str, timestamp_secs: f
         .args([
             "-y",
             "-nostdin",
-            "-v", "error",
-            "-ss", &timestamp,
-            "-i", video_path,
-            "-vframes", "1",
-            "-q:v", "3",
-            "-vf", "scale=480:-1",
+            "-v",
+            "error",
+            "-ss",
+            &timestamp,
+            "-i",
+            video_path,
+            "-vframes",
+            "1",
+            "-q:v",
+            "3",
+            "-vf",
+            "scale=480:-1",
             output_path,
         ])
         .output()
@@ -195,7 +211,11 @@ pub fn generate_thumbnail(video_path: &str, output_path: &str, timestamp_secs: f
 }
 
 /// Extract embedded cover artwork into the thumbnail slot when the container has an attached picture stream.
-pub fn extract_embedded_artwork(video_path: &str, output_path: &str, stream_index: i32) -> Result<(), String> {
+pub fn extract_embedded_artwork(
+    video_path: &str,
+    output_path: &str,
+    stream_index: i32,
+) -> Result<(), String> {
     if let Some(parent) = Path::new(output_path).parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
@@ -205,12 +225,18 @@ pub fn extract_embedded_artwork(video_path: &str, output_path: &str, stream_inde
         .args([
             "-y",
             "-nostdin",
-            "-v", "error",
-            "-i", video_path,
-            "-map", &map_arg,
-            "-frames:v", "1",
-            "-q:v", "3",
-            "-vf", "scale=480:-1",
+            "-v",
+            "error",
+            "-i",
+            video_path,
+            "-map",
+            &map_arg,
+            "-frames:v",
+            "1",
+            "-q:v",
+            "3",
+            "-vf",
+            "scale=480:-1",
             output_path,
         ])
         .output()
