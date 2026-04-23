@@ -1045,7 +1045,6 @@ pub fn get_collection_videos(
 }
 
 #[tauri::command]
-pub fn player_set_speed(app: AppHandle, state: State<'_, AppState>, speed: f64) -> Result<(), String> {
+pub fn player_set_speed(_app: AppHandle, state: State<'_, AppState>, speed: f64) -> Result<(), String> {
     player::set_speed(state.player_manager.clone(), speed)
 }
-
