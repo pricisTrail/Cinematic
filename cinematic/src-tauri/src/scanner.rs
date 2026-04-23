@@ -15,6 +15,7 @@ pub struct ProbedVideoMetadata {
     pub duration_secs: Option<f64>,
     pub width: Option<i32>,
     pub height: Option<i32>,
+    pub primary_video_stream_index: Option<i32>,
     pub embedded_artwork_stream_index: Option<i32>,
 }
 
@@ -164,6 +165,7 @@ pub fn extract_metadata(file_path: &str) -> ProbedVideoMetadata {
             .and_then(|stream| stream["width"].as_i64().map(|value| value as i32)),
         height: primary_video_stream
             .and_then(|stream| stream["height"].as_i64().map(|value| value as i32)),
+        primary_video_stream_index: primary_video_stream.and_then(stream_index),
         embedded_artwork_stream_index,
     }
 }
@@ -173,6 +175,7 @@ pub fn generate_thumbnail(
     video_path: &str,
     output_path: &str,
     timestamp_secs: f64,
+    stream_index: Option<i32>,
 ) -> Result<(), String> {
     let timestamp = format!("{:.2}", timestamp_secs);
 
@@ -181,16 +184,25 @@ pub fn generate_thumbnail(
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
 
-    let output = media_command("ffmpeg")
+    let map_arg = stream_index.map(|index| format!("0:{index}"));
+    let mut command = media_command("ffmpeg");
+    command.args([
+        "-y",
+        "-nostdin",
+        "-v",
+        "error",
+        "-ss",
+        &timestamp,
+        "-i",
+        video_path,
+    ]);
+
+    if let Some(map_arg) = &map_arg {
+        command.arg("-map").arg(map_arg);
+    }
+
+    let output = command
         .args([
-            "-y",
-            "-nostdin",
-            "-v",
-            "error",
-            "-ss",
-            &timestamp,
-            "-i",
-            video_path,
             "-vframes",
             "1",
             "-q:v",

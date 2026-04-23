@@ -579,6 +579,7 @@ fn sync_thumbnail_for_video(
     video_id: &str,
     video_path: &str,
     duration_secs: Option<f64>,
+    primary_video_stream_index: Option<i32>,
     embedded_artwork_stream_index: Option<i32>,
     prefer_embedded_artwork: bool,
 ) -> Result<bool, String> {
@@ -604,6 +605,7 @@ fn sync_thumbnail_for_video(
         video_path,
         &thumb_path_str,
         thumbnail_timestamp(duration_secs),
+        primary_video_stream_index,
     )
     .is_ok()
     {
@@ -644,6 +646,7 @@ pub fn generate_thumbnails(
             &video.id,
             &video.path,
             duration_secs,
+            metadata.primary_video_stream_index,
             metadata.embedded_artwork_stream_index,
             false,
         )? {
@@ -673,6 +676,7 @@ pub fn extract_video_metadata(
         &video_id,
         &video_path,
         metadata.duration_secs,
+        metadata.primary_video_stream_index,
         metadata.embedded_artwork_stream_index,
         true,
     )?;
