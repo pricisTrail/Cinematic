@@ -97,7 +97,6 @@ pub fn create_video_record(file_path: &str, library_id: &str) -> Option<VideoRec
 fn probe_media(file_path: &str) -> Option<Value> {
     let output = media_command("ffprobe")
         .args([
-            "-nostdin",
             "-v",
             "quiet",
             "-print_format",
